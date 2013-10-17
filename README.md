@@ -1,5 +1,5 @@
 Chris Card
-<Other>
+Steven Ruppert
 Project 2
 --------------------
 
