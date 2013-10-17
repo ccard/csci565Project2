@@ -11,5 +11,5 @@ import java.rmi.RemoteException;
 
 public interface Compute extends Remote{
 	//Defines the rmi methdo sendReceive
-	Message  sendReceive(Message msg) throws RemoteException;
+	Message  send(Message msg) throws RemoteException;
 }
