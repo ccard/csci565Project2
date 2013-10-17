@@ -10,8 +10,8 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import Compute.Compute;
-import Compute.Message;
+import Compute.BulletinBoard;
+import Compute.Article;
 import java.util.concurrent.*;
 
 

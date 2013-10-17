@@ -8,8 +8,8 @@ package Client;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import Compute.Compute;
-import Compute.Message;
+import Compute.BulletinBoard;
+import Compute.Article;
 import java.io.*;
 
 public class Client
