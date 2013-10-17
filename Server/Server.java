@@ -15,7 +15,7 @@ import Compute.Message;
 import java.util.concurrent.*;
 
 
-public class Server implements Compute
+public class Server implements BulletinBoard
 {
 	//Stores all messages that where recieved from clients
 	private ConcurrentLinkedQueue<Message> message_queue;
