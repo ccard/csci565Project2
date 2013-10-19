@@ -84,9 +84,9 @@ public class Server implements BulletinBoard
 		try{
 			String name = "Compute";
 
-			Compute engine = new Server();
+			BulletinBoard engine = new Server();
 
-			Compute stub = (Compute) UnicastRemoteObject.exportObject(engine,0);
+			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
 			//This creates the rmiregistry so the user doesn't have to create it
 			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[0]));

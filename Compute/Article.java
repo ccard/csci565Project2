@@ -5,6 +5,8 @@
 
 package Compute;
 
+import java.io.Serializable;
+
 public class Article implements Serializable
 {
 	private static final long serialVersionUID = 227L;
@@ -18,7 +20,7 @@ public class Article implements Serializable
 	* @param msg message to store
 	* @param type the type of action to take when sent to the server, either send or receive
 	*/
-	public Article(String body, int parent);
+	public Article(String body, int parent)
 	{
 		this(body,-1,parent);
 	}
