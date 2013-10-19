@@ -18,45 +18,50 @@ import java.util.concurrent.*;
 public class Server implements BulletinBoard
 {
 	//Stores all messages that where recieved from clients
-	private ConcurrentLinkedQueue<Message> message_queue;
-
-	public Server()
-	{
-		super();
-		message_queue = new ConcurrentLinkedQueue<Message>();
-	}
+	private ConcurrentLinkedQueue<Article> articles;
 
 	/**
-	* This is the rmi method the clients call to send and receive messages from the sever
-	* @param Message object that will be used to determine what the client is asking of the server
-	* @return If receiving from client it will return the message that was sent to it or null if the
-	*         message was not added to the queue.  if the client is asking for a message it will return
-	*			 the first message in the queue or null if the queue is empty.
+	* @param master true if it is the master node false if it a slave node
+	* @param the location of the master node if it is a slave node this will be
+	* 		 a string in the form of <masterhostname>:<masterportnumber>
 	*/
-	public Message sendReceive(Message msg)
+	public Server(boolean master, String masterName)
 	{
-		if(msg.getMsgType().compareTo("send") == 0)
-		{
-			if(message_queue.add(msg))
-			{
-				return msg;
-			}
-			else
-			{
-				return null;
-			}
-		}
-		else
-		{
-			if(message_queue.isEmpty())
-			{
-				return null;
-			}
-			else 
-			{
-				return message_queue.poll();
-			}
-		}
+		super();
+		articles = new ConcurrentLinkedQueue<Message>();
+	}
+
+	//##################################################################
+	// Client Methods
+	//##################################################################
+
+	public void post(Article article)
+	{
+
+	}
+
+	public List<Article> getArticles()
+	{
+
+	}
+
+	public Article choose(int id)
+	{
+
+	}
+
+	//##################################################################
+	// Server Methods
+	//##################################################################
+
+	public void replicateWrite(Article article)
+	{
+
+	}
+
+	public void registerSlaveNode(String slaveNodeAddress)
+	{
+		
 	}
 	
 	/**
