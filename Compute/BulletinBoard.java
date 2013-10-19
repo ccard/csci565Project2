@@ -17,4 +17,12 @@ public interface BulletinBoard extends Remote{
 	
 	//Slave method
 	void replicateWrite(Article article) throws RemoteException;
+
+	//Master method
+	/**
+	* This method registars the Slave nodes with the master node
+	* @param the address of the slave node in the form of 
+	*		<slavehostname>:<portnumber>
+	*/
+	void registerSlaveNode(String slaveNodeAddress) throws RemoteException;
 }
