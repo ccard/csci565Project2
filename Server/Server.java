@@ -20,6 +20,8 @@ public class Server implements BulletinBoard
 	//Stores all messages that where recieved from clients
 	private ConcurrentLinkedQueue<Article> articles;
 
+	private boolean isMaster;
+
 	/**
 	* @param master true if it is the master node false if it a slave node
 	* @param the location of the master node if it is a slave node this will be
@@ -28,7 +30,16 @@ public class Server implements BulletinBoard
 	public Server(boolean master, String masterName)
 	{
 		super();
-		articles = new ConcurrentLinkedQueue<Message>();
+		articles = new ConcurrentLinkedQueue<Article>();
+
+		if (master) 
+		{
+			
+		}
+		else
+		{
+
+		}
 	}
 
 	//##################################################################
@@ -61,7 +72,7 @@ public class Server implements BulletinBoard
 
 	public void registerSlaveNode(String slaveNodeAddress)
 	{
-		
+
 	}
 	
 	/**
