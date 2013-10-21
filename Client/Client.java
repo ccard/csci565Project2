@@ -37,7 +37,7 @@ public class Client
 			}
 			sendReceive = args[2];
 			
-			message = (args.length == 4 ? makeMessageText(args[3]) : "");
+			//message = (args.length == 4 ? makeMessageText(args[3]) : "");
 		}
 		else{
 			for(int i = 0; i < args.length; i++)
@@ -50,10 +50,10 @@ public class Client
 			String name = "Compute";
 
 			Registry registry = LocateRegistry.getRegistry(host,port);
-			Compute comp = (Compute) registry.lookup(name);
+			BulletinBoard comp = (BulletinBoard) registry.lookup(name);
 
-			Messages task = new Messages(message,sendReceive);
-			Message ret = comp.sendReceive(task);
+			//Messages task = new Messages(message,sendReceive);
+			//Message ret = comp.sendReceive(task);
 
 			
 		}catch(Exception e){
