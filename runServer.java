@@ -57,6 +57,13 @@ public class runServer
 		return line2;
 	}
 
+	/**
+	*	The arguments are as follows
+	*     -s <socket> "Provides the socket number"
+	*	  -master (only when instantiating the master server)
+	* 	  -slave (only when instantiating the slave server)
+	*	  -mhost <Master host name>:<socket> (only used if not the master node)
+	*/
 	public static void main(String[] args)
 	{
 		try{
@@ -64,7 +71,7 @@ public class runServer
 			String host = getHost();
 
 			//builds, redirects output and runs the commandline call to the server program
-			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+host+path+"/Compute/compute.jar","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0]);
+			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+host+path+"/Compute/compute.jar","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0],args[1],args[2],(args.length >= 4 ? args[3] : ""),(args.length == 5 ? args[4] : ""));
 			run.redirectErrorStream(true);
 			Process p = run.start();
 
