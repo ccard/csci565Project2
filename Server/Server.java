@@ -22,7 +22,11 @@ public class Server implements BulletinBoard
 	private ConcurrentLinkedQueue<Article> articles;
 
 	private boolean isMaster;
-
+	
+	public Server()
+	{
+		super();
+	}
 	/**
 	* @param master true if it is the master node false if it a slave node
 	* @param the location of the master node if it is a slave node this will be
@@ -54,12 +58,12 @@ public class Server implements BulletinBoard
 
 	public List<Article> getArticles()
 	{
-
+		return null;
 	}
 
 	public Article choose(int id)
 	{
-
+		return null;
 	}
 
 	//##################################################################
