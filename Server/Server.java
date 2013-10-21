@@ -23,10 +23,6 @@ public class Server implements BulletinBoard
 
 	private boolean isMaster;
 	
-	public Server()
-	{
-		super();
-	}
 	/**
 	* @param master true if it is the master node false if it a slave node
 	* @param the location of the master node if it is a slave node this will be
@@ -89,7 +85,7 @@ public class Server implements BulletinBoard
 		try{
 			String name = "Compute";
 
-			BulletinBoard engine = new Server();
+			BulletinBoard engine = new Server(false,"test");
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
