@@ -6,6 +6,7 @@
 package Compute;
 
 import java.io.Serializable;
+import java.util.*;
 
 public class Article implements Serializable
 {
