@@ -14,7 +14,7 @@ import Compute.BulletinBoard;
 import Compute.Article;
 import java.util.concurrent.*;
 import java.util.*;
-
+import java.lang.RunTime;
 
 public class Server implements BulletinBoard
 {
@@ -22,13 +22,14 @@ public class Server implements BulletinBoard
 	private ConcurrentLinkedQueue<Article> articles;
 
 	private boolean isMaster;
+	private String serverName,masterName;
 	
 	/**
 	* @param master true if it is the master node false if it a slave node
 	* @param the location of the master node if it is a slave node this will be
 	* 		 a string in the form of <masterhostname>:<masterportnumber>
 	*/
-	public Server(boolean master, String masterName)
+	public Server(boolean master, String masterName, String serverName)
 	{
 		super();
 		articles = new ConcurrentLinkedQueue<Article>();
@@ -43,8 +44,10 @@ public class Server implements BulletinBoard
 		}
 	}
 
+
+
 	//##################################################################
-	// Client Methods
+	// Client RPC Methods
 	//##################################################################
 
 	public void post(Article article)
@@ -63,7 +66,7 @@ public class Server implements BulletinBoard
 	}
 
 	//##################################################################
-	// Server Methods
+	// Server RPC Methods
 	//##################################################################
 
 	public void replicateWrite(Article article)
@@ -76,16 +79,85 @@ public class Server implements BulletinBoard
 
 	}
 	
+	//###################################################################
+	// Input parsing methods
+	//###################################################################
+
+	public static boolean isMaster(String[] args)
+	{
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].comareTo("-m") == 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static int socket(String[] args)
+	{
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].comareTo("-s") == 0) {
+				try {
+					return Integer.parseInt(args[i+1]);
+				} catch (Exception e) {
+					e.printStackTrace();
+					System.exit(2);
+				}
+			}
+		}
+
+		return -1;
+	}
+
+	public static String masterName(String[] args)
+	{
+		for (int i = 0; i < args.length; i++) {
+			if (args[i].comareTo("-mhost") == 0) {
+				return args[i+1];
+			}
+		}
+		return null;
+	}
+
 	/**
-	* @param list of arguments in the following order
-	*			args[0] = socket
+	* This gets the host name from the computer
+	* @return the computers name
+	*/
+	public static String getHost()
+	{
+		String line = "",line2="";
+
+		try{
+			//Runs the command line call to hostname
+			Process p = Runtime.getRuntime().exec("hostname");
+
+			//reads the result from the command line call
+			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+			while ((line = b.readLine()) != null)
+			{
+				line2 = line.replace("\n","").replace("\r","");
+			}
+
+		} catch (Exception e) {
+			System.err.println("Failed to find host name!");
+			e.printStackTrace();
+		}
+		return line2;
+	}
+
+	/**
+	* @param list of arguments in the following formate
+	*     -s <socket> "Provides the socket number"
+	*	  -m (only when instantiating the master server)
+	*	  -mhost <Master host name>:<socket> (only used if not the master node)
 	*/
 	public static void main(String[] args)
 	{
 		try{
 			String name = "Compute";
-
-			BulletinBoard engine = new Server(false,"test");
+			int port  = socket(args);
+			BulletinBoard engine = new Server(isMaster(args),masterName(args),getHost()+":"+port.toString());
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
