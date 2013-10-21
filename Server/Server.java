@@ -7,6 +7,7 @@
 package Server;
 
 import java.rmi.RemoteException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -23,7 +24,7 @@ public class Server implements BulletinBoard
 	private ConcurrentLinkedQueue<Article> articles;
 
 	private boolean isMaster;
-	private String serverName,masterName;
+	public final String serverName,masterName;
 	private BulletinBoard master;
 	private ArrayList<BulletinBoard> slaves;
 	private int masterArticleId;
@@ -52,7 +53,7 @@ public class Server implements BulletinBoard
 	{
 		if (!isMaster) {
 			String name = "Compute";
-			System.out.println(masterName);
+			
 			String hostport[] = masterName.split(":");
 			try {
 				int port  = Integer.parseInt(hostport[1]);
@@ -96,9 +97,35 @@ public class Server implements BulletinBoard
 
 	}
 
-	public void registerSlaveNode(String slaveNodeAddress)
+	/**
+	* This method registars a slave node with the master node
+	*/
+	public void registerSlaveNode(String slaveNodeAddress) throws RemoteException
 	{
-
+		if (isMaster) {
+			String name = "Compute";
+			String hostport[] = slaveNodeAddress.split(":");
+			try{
+				int port  = Integer.parseInt(hostport[1]);
+				Registry reg = LocateRegistry.getRegistry(hostport[0],port);
+				BulletinBoard temp = (BulletinBoard) reg.lookup(name);
+				slaves.add(temp);
+				System.out.println("success");
+			} catch(Exception e) {
+				System.err.println("Connot connect");
+				e.printStackTrace();
+			}
+		
+		}
+		else
+		{
+			try{
+				master.registerSlaveNode(slaveNodeAddress);
+			}catch (Exception e){
+				e.printStackTrace();
+				System.exit(2);
+			}
+		}
 	}
 	
 	//###################################################################
@@ -181,13 +208,19 @@ public class Server implements BulletinBoard
 			String name = "Compute";
 
 			int port  = socket(args);
-			BulletinBoard engine = new Server(isMaster(args),getMasterName(args),getHost()+":"+port);
+			boolean master = isMaster(args);
+			Server engine = new Server(master,getMasterName(args),getHost()+":"+port);
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
 			//This creates the rmiregistry so the user doesn't have to create it
 			Registry registry = LocateRegistry.createRegistry(port);
 			registry.rebind(name,stub);
+
+			if (!master)
+			{
+				engine.registerSlaveNode(engine.serverName);
+			}
 
 			//Notifies user the server was bound to the socket
 			System.out.println("Server bound to socket: "+port);
