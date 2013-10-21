@@ -14,7 +14,8 @@ import Compute.BulletinBoard;
 import Compute.Article;
 import java.util.concurrent.*;
 import java.util.*;
-import java.lang.RunTime;
+import java.lang.Runtime;
+import java.io.*;
 
 public class Server implements BulletinBoard
 {
@@ -23,6 +24,9 @@ public class Server implements BulletinBoard
 
 	private boolean isMaster;
 	private String serverName,masterName;
+	private BulletinBoard master;
+	private ArrayList<BulletinBoard> slaves;
+	private int masterArticleId;
 	
 	/**
 	* @param master true if it is the master node false if it a slave node
@@ -32,15 +36,33 @@ public class Server implements BulletinBoard
 	public Server(boolean master, String masterName, String serverName)
 	{
 		super();
+		if (master) {
+			masterArticleId = 0;
+			slaves = new ArrayList<BulletinBoard>();
+		}
 		articles = new ConcurrentLinkedQueue<Article>();
 
-		if (master) 
-		{
-			
-		}
-		else
-		{
+		isMaster = master;
+		this.serverName = serverName;
+		this.masterName = masterName;
+		connectToMaster();
+	}
 
+	public void connectToMaster()
+	{
+		if (!isMaster) {
+			String name = "Compute";
+			System.out.println(masterName);
+			String hostport[] = masterName.split(":");
+			try {
+				int port  = Integer.parseInt(hostport[1]);
+				Registry reg = LocateRegistry.getRegistry(hostport[0],port);
+				master = (BulletinBoard) reg.lookup(name);
+
+			} catch (Exception e){
+				e.printStackTrace();
+				System.exit(2);
+			}
 		}
 	}
 
@@ -86,7 +108,7 @@ public class Server implements BulletinBoard
 	public static boolean isMaster(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].comareTo("-m") == 0) {
+			if (args[i].compareTo("-master") == 0) {
 				return true;
 			}
 		}
@@ -96,7 +118,7 @@ public class Server implements BulletinBoard
 	public static int socket(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].comareTo("-s") == 0) {
+			if (args[i].compareTo("-s") == 0) {
 				try {
 					return Integer.parseInt(args[i+1]);
 				} catch (Exception e) {
@@ -109,10 +131,10 @@ public class Server implements BulletinBoard
 		return -1;
 	}
 
-	public static String masterName(String[] args)
+	public static String getMasterName(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
-			if (args[i].comareTo("-mhost") == 0) {
+			if (args[i].compareTo("-mhost") == 0) {
 				return args[i+1];
 			}
 		}
@@ -149,24 +171,26 @@ public class Server implements BulletinBoard
 	/**
 	* @param list of arguments in the following formate
 	*     -s <socket> "Provides the socket number"
-	*	  -m (only when instantiating the master server)
+	*	  -master (only when instantiating the master server)
+	* 	  -slave (only when instantiating the slave server)
 	*	  -mhost <Master host name>:<socket> (only used if not the master node)
 	*/
 	public static void main(String[] args)
 	{
 		try{
 			String name = "Compute";
+
 			int port  = socket(args);
-			BulletinBoard engine = new Server(isMaster(args),masterName(args),getHost()+":"+port.toString());
+			BulletinBoard engine = new Server(isMaster(args),getMasterName(args),getHost()+":"+port);
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
 			//This creates the rmiregistry so the user doesn't have to create it
-			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[0]));
+			Registry registry = LocateRegistry.createRegistry(port);
 			registry.rebind(name,stub);
 
 			//Notifies user the server was bound to the socket
-			System.out.println("Server bound to socket: "+args[0]);
+			System.out.println("Server bound to socket: "+port);
 			System.out.println("EOF");
 		} catch (Exception e){
 			System.err.println("Server exception:");
