@@ -4,13 +4,13 @@ server:
 		  javac  Server/Server.java
 
 client:
-		  javac Client/Client.java Client/Messages.java
+		  javac Client/Client.java
 
 run:
 		  javac runClient.java runServer.java
 
 compute:
-		  javac Compute/Compute.java Compute/Message.java
+		  javac Compute/BulletinBoard.java Compute/Article.java
 		  jar cvf Compute/compute.jar Compute/*.class 
 
 clean:
