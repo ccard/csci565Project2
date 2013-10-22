@@ -18,120 +18,8 @@ import java.util.*;
 import java.lang.Runtime;
 import java.io.*;
 
-public class Server implements BulletinBoard
+public class Server
 {
-	//Stores all messages that where recieved from clients
-	private ConcurrentLinkedQueue<Article> articles;
-
-	private boolean isMaster;
-	public final String serverName,masterName;
-	private BulletinBoard master;
-	private ArrayList<BulletinBoard> slaves;
-	private int masterArticleId;
-	
-	/**
-	* @param master true if it is the master node false if it a slave node
-	* @param the location of the master node if it is a slave node this will be
-	* 		 a string in the form of <masterhostname>:<masterportnumber>
-	*/
-	public Server(boolean master, String masterName, String serverName)
-	{
-		super();
-		if (master) {
-			masterArticleId = 0;
-			slaves = new ArrayList<BulletinBoard>();
-		}
-		articles = new ConcurrentLinkedQueue<Article>();
-
-		isMaster = master;
-		this.serverName = serverName;
-		this.masterName = masterName;
-		connectToMaster();
-	}
-
-	public void connectToMaster()
-	{
-		if (!isMaster) {
-			String name = "Compute";
-			
-			String hostport[] = masterName.split(":");
-			try {
-				int port  = Integer.parseInt(hostport[1]);
-				Registry reg = LocateRegistry.getRegistry(hostport[0],port);
-				master = (BulletinBoard) reg.lookup(name);
-
-			} catch (Exception e){
-				e.printStackTrace();
-				System.exit(2);
-			}
-		}
-	}
-
-
-
-	//##################################################################
-	// Client RPC Methods
-	//##################################################################
-
-	public void post(Article article)
-	{
-
-	}
-
-	public List<Article> getArticles()
-	{
-		return null;
-	}
-
-	public Article choose(int id)
-	{
-		return null;
-	}
-
-	//##################################################################
-	// Server RPC Methods
-	//##################################################################
-
-	public void replicateWrite(Article article)
-	{
-
-	}
-
-	/**
-	* This method registars a slave node with the master node
-	* @param is in the form of <hostname>:<port>
-	*/
-	public void registerSlaveNode(String slaveNodeAddress) throws RemoteException
-	{
-		if (isMaster) {
-			String name = "Compute";
-			String hostport[] = slaveNodeAddress.split(":");
-			try{
-				int port  = Integer.parseInt(hostport[1]);
-				Registry reg = LocateRegistry.getRegistry(hostport[0],port);
-				BulletinBoard temp = (BulletinBoard) reg.lookup(name);
-				slaves.add(temp);
-				System.out.println("success");
-			} catch(Exception e) {
-				System.err.println("Connot connect");
-				e.printStackTrace();
-			}
-		
-		}
-		else
-		{
-			try{
-				master.registerSlaveNode(slaveNodeAddress);
-			}catch (Exception e){
-				e.printStackTrace();
-				System.exit(2);
-			}
-		}
-	}
-	
-	//###################################################################
-	// Input parsing methods
-	//###################################################################
 
 	public static boolean isMaster(String[] args)
 	{
@@ -205,12 +93,13 @@ public class Server implements BulletinBoard
 	*/
 	public static void main(String[] args)
 	{
-		try{
+		try
+		{
 			String name = "Compute";
 
 			int port  = socket(args);
 			boolean master = isMaster(args);
-			Server engine = new Server(master,getMasterName(args),getHost()+":"+port);
+			BulletinBoard engine = (master ? new MasterServer() : new SlaveServer(getMasterName(args),getHost()+":"+port));
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
@@ -220,13 +109,15 @@ public class Server implements BulletinBoard
 
 			if (!master)
 			{
-				engine.registerSlaveNode(engine.serverName);
+				engine.registerSlaveNode(engine);
 			}
 
 			//Notifies user the server was bound to the socket
 			System.out.println("Server bound to socket: "+port);
 			System.out.println("EOF");
-		} catch (Exception e){
+		} 
+		catch (Exception e)
+		{
 			System.err.println("Server exception:");
 			e.printStackTrace();
 		}
