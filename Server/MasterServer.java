@@ -6,6 +6,10 @@
 
 package Server;
 
+import Compute.Article;
+import Compute.BulletinBoard;
+import org.skife.jdbi.v2.DBI;
+
 import java.rmi.RemoteException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
@@ -23,9 +27,7 @@ import com.google.common.util.concurrent.*;
 public class MasterServer implements BulletinBoard
 {
 	private List<BulletinBoard> slaves;
-	private AtomicInteger masterArticleId;
-	//Stores all messages that where recieved from clients
-	private List<Article> articles;
+    private ArticleStore articleStore;
 
 	/**
 	* @param master true if it is the master node false if it a slave node
@@ -34,11 +36,12 @@ public class MasterServer implements BulletinBoard
 	*/
 	public MasterServer()
 	{
-		super();
-		masterArticleId = new AtomicInteger(0);
-		slaves =  Collections.synchronizedList(new ArrayList<BulletinBoard>());
+        slaves = Collections.synchronizedList(new ArrayList<BulletinBoard>());
 
-		articles =  Collections.synchronizedList(new ArrayList<Article>());
+        // connect to embedded article database
+        DBI dbi = new DBI("jdbc:h2:mem:test");
+        articleStore = dbi.onDemand(ArticleStore.class);
+        articleStore.initializeTable();
 	}
 
 	//##################################################################
@@ -47,18 +50,21 @@ public class MasterServer implements BulletinBoard
 
 	public void post(Article article)
 	{
-
+        articleStore.insert(article);
+        // TODO broadcast write at quorum write level
 	}
 
 	public List<Article> getArticles()
 	{
-		return null;
+		return articleStore.getAll();
+        // TODO broadcast get at quorum read level
 	}
 
 	public Article choose(int id)
-	{
-		return null;
-	}
+    {
+        return articleStore.get(id);
+        // TODO broadcast get at quorum read level
+    }
 
 	//##################################################################
 	// Server RPC Methods
@@ -66,12 +72,12 @@ public class MasterServer implements BulletinBoard
 
 	public void replicateWrite(Article article)
 	{
-
+        // as the master, we don't need to do anything.
 	}
 
 	/**
 	* This method registars a slave node with the master node
-	* @param is in the form of <hostname>:<port>
+	* @param slave in the form of <hostname>:<port>
 	*/
 	public void registerSlaveNode(BulletinBoard slave) throws RemoteException
 	{
@@ -80,10 +86,10 @@ public class MasterServer implements BulletinBoard
 			slaves.add(slave);
 
 			System.out.println("success");
-		} 
-		catch(Exception e) 
+		}
+		catch(Exception e)
 		{
-			System.err.println("Connot connect");
+			System.err.println("Cannot connect");
 			e.printStackTrace();
 		}
 	}
