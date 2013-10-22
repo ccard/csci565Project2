@@ -62,10 +62,15 @@ public class runServer
 	*     -s <socket> "Provides the socket number"
 	*	  -master (only when instantiating the master server)
 	* 	  -slave (only when instantiating the slave server)
-	*	  -mhost <Master host name>:<socket> (only used if not the master node)
+	*	  -mhost <Master hostname>:<socket> (only used if not the master node)
 	*/
 	public static void main(String[] args)
 	{
+		if (args.length == 0) {
+			String usage = "java runServer -s <socket> [-master | -slave] -mhost <Master hostname>:<socket>\n";
+			usage += "-s <socket>, [-master | -slave] are required argumnts\n";
+			usage += "-mhost <Master hostname>:<socket> is only used with the -slave option"
+		}
 		try{
 			String path = getPath();
 			String host = getHost();
