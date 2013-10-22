@@ -67,9 +67,9 @@ public class SlaveServer implements BulletinBoard
 	// Client RPC Methods
 	//##################################################################
 
-	public void post(Article article)
+	public void post(Article article) throws RemoteException
 	{
-
+		master.post(article);
 	}
 
 	public List<Article> getArticles()
