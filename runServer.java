@@ -85,7 +85,7 @@ public class runServer
 			String host = getHost();
 
 			//builds, redirects output and runs the commandline call to the server program
-			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+host+path+"/Compute/compute.jar","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0],args[1],args[2],
+			ProcessBuilder run = new ProcessBuilder("java","-cp","lib/*:.","-Djava.rmi.server.codebase=http://"+host+path+"/lib/*","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0],args[1],args[2],
 										(args.length >= 4 ? args[3] : ""),(args.length == 5 ? args[4] : ""));
 			run.redirectErrorStream(true);
 			Process p = run.start();

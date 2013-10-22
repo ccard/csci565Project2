@@ -13,7 +13,7 @@ class startServers
 	{
 		try
 		{
-			ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; java runServer "+args);
+			ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; java -cp lib/*:. runServer "+args);
 			run.redirectErrorStream(true);
 			Process p = run.start();
 			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
