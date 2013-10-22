@@ -25,5 +25,5 @@ public interface BulletinBoard extends Remote{
 	* @param the address of the slave node in the form of 
 	*		<slavehostname>:<portnumber>
 	*/
-	void registerSlaveNode(String slaveNodeAddress) throws RemoteException;
+	void registerSlaveNode(BulletinBoard slave) throws RemoteException;
 }
