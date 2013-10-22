@@ -68,8 +68,9 @@ public class runServer
 	{
 		if (args.length == 0) {
 			String usage = "java runServer -s <socket> [-master | -slave] -mhost <Master hostname>:<socket>\n";
-			usage += "-s <socket>, [-master | -slave] are required argumnts\n";
-			usage += "-mhost <Master hostname>:<socket> is only used with the -slave option"
+			usage += "\n-s <socket>, [-master | -slave] are required argumnts\n";
+			usage += "-mhost <Master hostname>:<socket> is only used with the -slave option";
+			System.out.println(usage);
 		}
 		try{
 			String path = getPath();
