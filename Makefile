@@ -1,7 +1,7 @@
 all: server client run
 
 server:
-		  javac  Server/Server.java
+		  javac  Server/*.java 
 
 client:
 		  javac Client/Client.java
