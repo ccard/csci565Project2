@@ -7,7 +7,7 @@ client:
 		  javac Client/Client.java
 
 run:
-		  javac runClient.java runServer.java
+		  javac runClient.java runServer.java startServers.java
 
 compute:
 		  javac Compute/BulletinBoard.java Compute/Article.java
