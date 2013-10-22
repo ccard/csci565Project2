@@ -16,7 +16,8 @@ public class runServer
 	{
 		String line = "",line2="";
 
-		try{
+		try
+		{
 			Process p = Runtime.getRuntime().exec("hostname");
 
 			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -26,7 +27,9 @@ public class runServer
 				line2 = line.replace("\n","").replace("\r","");
 			}
 
-		} catch (Exception e) {
+		} 
+		catch (Exception e) 
+		{
 			System.err.println("Failed to find host name!");
 			e.printStackTrace();
 		}
@@ -41,7 +44,8 @@ public class runServer
 	{
 		String line = "",line2="";
 
-		try{
+		try
+		{
 			Process p = Runtime.getRuntime().exec("pwd");
 
 			BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -50,7 +54,9 @@ public class runServer
 			{
 				line2 = line.replace("\n","").replace("\r","");
 			}
-		} catch (Exception e) {
+		} 
+		catch (Exception e) 
+		{
 			System.err.println("Failed to find path!");
 			e.printStackTrace();
 		}
@@ -66,18 +72,21 @@ public class runServer
 	*/
 	public static void main(String[] args)
 	{
-		if (args.length == 0) {
+		if (args.length == 0) 
+		{
 			String usage = "java runServer -s <socket> [-master | -slave] -mhost <Master hostname>:<socket>\n";
 			usage += "\n-s <socket>, [-master | -slave] are required argumnts\n";
 			usage += "-mhost <Master hostname>:<socket> is only used with the -slave option";
 			System.out.println(usage);
 		}
-		try{
+		try
+		{
 			String path = getPath();
 			String host = getHost();
 
 			//builds, redirects output and runs the commandline call to the server program
-			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+host+path+"/Compute/compute.jar","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0],args[1],args[2],(args.length >= 4 ? args[3] : ""),(args.length == 5 ? args[4] : ""));
+			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+host+path+"/Compute/compute.jar","-Djava.rmi.server.hostname="+host+".mines.edu","Server.Server",args[0],args[1],args[2],
+										(args.length >= 4 ? args[3] : ""),(args.length == 5 ? args[4] : ""));
 			run.redirectErrorStream(true);
 			Process p = run.start();
 
@@ -94,7 +103,9 @@ public class runServer
 				System.out.println(line);
 			}
 						
-		}catch (Exception e){
+		}
+		catch (Exception e)
+		{
 			e.printStackTrace();
 		}
 	}
