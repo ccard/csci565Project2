@@ -50,7 +50,7 @@ public class MasterServer implements BulletinBoard
 
 	public void post(Article article)
 	{
-        articleStore.insert(article);
+        article = article.setId(articleStore.insert(article));
         // TODO broadcast write at quorum write level
 	}
 

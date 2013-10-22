@@ -31,7 +31,8 @@ public interface ArticleStore
      * by client's POST method.
      */
     @SqlUpdate("insert into articles (content, parent) values (:content, :parent)")
-    void insert(@BindBean Article article);
+    @GetGeneratedKeys
+    int insert(@BindBean Article article);
 
     /**
      * Used for server replication, not by clients.
