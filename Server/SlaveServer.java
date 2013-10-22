@@ -13,6 +13,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import Compute.BulletinBoard;
 import Compute.Article;
+import org.skife.jdbi.v2.DBI;
+
 import java.util.concurrent.*;
 import java.util.*;
 import java.lang.Runtime;
@@ -20,23 +22,23 @@ import java.io.*;
 
 public class SlaveServer implements BulletinBoard
 {
-	//Stores all messages that where recieved from clients
-	private List<Article> articles;
+    private final ArticleStore articleStore;
 
 	public final String serverName,masterName;
 	private BulletinBoard master;
-	
-	
-	/**
+
+
+    /**
 	* @param master true if it is the master node false if it a slave node
 	* @param the location of the master node if it is a slave node this will be
 	* 		 a string in the form of <masterhostname>:<masterportnumber>
 	*/
 	public SlaveServer(String masterName, String serverName)
 	{
-		super();
-		
-		articles = Collections.synchronizedList(new ArrayList<Article>());
+        // connect to embedded article database
+        DBI dbi = new DBI("jdbc:h2:mem:test");
+        articleStore = dbi.onDemand(ArticleStore.class);
+        articleStore.initializeTable();
 
 		this.serverName = serverName;
 		this.masterName = masterName;
@@ -46,22 +48,20 @@ public class SlaveServer implements BulletinBoard
 	public void connectToMaster()
 	{
 		String name = "Compute";
-		
+
 		String hostport[] = masterName.split(":");
-		try 
+		try
 		{
 			int port  = Integer.parseInt(hostport[1]);
 			Registry reg = LocateRegistry.getRegistry(hostport[0],port);
 			master = (BulletinBoard) reg.lookup(name);
-		} 
+		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 			System.exit(2);
 		}
 	}
-
-
 
 	//##################################################################
 	// Client RPC Methods
@@ -72,16 +72,15 @@ public class SlaveServer implements BulletinBoard
 		master.post(article);
 	}
 
-	public List<Article> getArticles()
-	{
-		return null;
+	public List<Article> getArticles() throws RemoteException
+    {
+		return master.getArticles();
 	}
 
-	public Article choose(int id)
-	{
-		System.out.println("success");
-		return null;
-	}
+	public Article choose(int id) throws RemoteException
+    {
+        return master.choose(id);
+    }
 
 	//##################################################################
 	// Server RPC Methods
@@ -89,7 +88,7 @@ public class SlaveServer implements BulletinBoard
 
 	public void replicateWrite(Article article)
 	{
-
+        articleStore.insertWithId(article);
 	}
 
 	/**

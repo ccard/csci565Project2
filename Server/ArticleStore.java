@@ -24,10 +24,20 @@ public interface ArticleStore
 {
     @SqlUpdate("create table if not exists " +
                "articles (id int primary key auto_increment, int parent, content text)")
-    void createTable();
+    void initializeTable();
 
-    @SqlUpdate("insert into articles (id, content, parent) values (:id, :content, :parent)")
+    /**
+     * Id is auto-incremented for ordering. Article id on the parameter is ignored. Used
+     * by client's POST method.
+     */
+    @SqlUpdate("insert into articles (content, parent) values (:content, :parent)")
     void insert(@BindBean Article article);
+
+    /**
+     * Used for server replication, not by clients.
+     */
+    @SqlUpdate("insert into articles (id, content, parent) values (:id, :content, :parent)")
+    void insertWithId(Article article);
 
     @SqlQuery("select * from articles")
     List<Article> getAll();
