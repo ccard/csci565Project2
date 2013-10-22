@@ -23,7 +23,7 @@ import java.util.*;
 public interface ArticleStore
 {
     @SqlUpdate("create table if not exists " +
-               "articles (id int primary key auto_increment, int parent, content text)")
+               "articles (id int primary key auto_increment, parent int, content text)")
     void initializeTable();
 
     /**
