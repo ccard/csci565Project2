@@ -21,7 +21,7 @@ import java.io.*;
 public class SlaveServer implements BulletinBoard
 {
 	//Stores all messages that where recieved from clients
-	private ConcurrentLinkedQueue<Article> articles;
+	private List<Article> articles;
 
 	public final String serverName,masterName;
 	private BulletinBoard master;
@@ -36,7 +36,7 @@ public class SlaveServer implements BulletinBoard
 	{
 		super();
 		
-		articles = new ConcurrentLinkedQueue<Article>();
+		articles = Collections.synchronizedList(new ArrayList<Article>());
 
 		this.serverName = serverName;
 		this.masterName = masterName;

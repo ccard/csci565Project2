@@ -17,13 +17,14 @@ import java.util.concurrent.*;
 import java.util.*;
 import java.lang.Runtime;
 import java.io.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MasterServer implements BulletinBoard
 {
-	private ArrayList<BulletinBoard> slaves;
-	private int masterArticleId;
+	private List<BulletinBoard> slaves;
+	private AtomicInteger masterArticleId;
 	//Stores all messages that where recieved from clients
-	private ConcurrentLinkedQueue<Article> articles;
+	private List<Article> articles;
 
 	/**
 	* @param master true if it is the master node false if it a slave node
@@ -33,10 +34,10 @@ public class MasterServer implements BulletinBoard
 	public MasterServer()
 	{
 		super();
-		masterArticleId = 0;
-		slaves = new ArrayList<BulletinBoard>();
+		masterArticleId = new AtomicInteger(0);
+		slaves =  Collections.synchronizedList(new ArrayList<BulletinBoard>());
 
-		articles = new ConcurrentLinkedQueue<Article>();
+		articles =  Collections.synchronizedList(new ArrayList<Article>());
 	}
 
 	//##################################################################
