@@ -1,64 +1,89 @@
-/**
-* @Author Chris Card
-* 9/16/13
-* This Contains code for the clients
-*/
-
 package Client;
+
+import Compute.Article;
+import Compute.BulletinBoard;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import Compute.BulletinBoard;
-import Compute.Article;
-import java.io.*;
+import java.util.*;
 
+/**
+ * Bulletin Board client program. Reads and writes articles hosted on the distributed
+ * Bulletin Board system.
+ */
 public class Client
 {
-	
-	/**
-	* @param String list of arguments that must be in following order: 
-	*        1 = hostname
-	*			2 = socket
-	*			3 = send | receive
-	*			4 = message file if send
-	*/
-	public static void main(String args[])
-	{
-		String host="",sendReceive="",message="";
-		int port = 5555;
-		if(args.length >= 3)
-		{
-			host = args[0];
-			try{
-				port = Integer.parseInt(args[1]);
-			} catch(Exception e){
-				System.err.println("Invalide port");
-				e.printStackTrace();
-			}
-			sendReceive = args[2];
-			
-			//message = (args.length == 4 ? makeMessageText(args[3]) : "");
-		}
-		else{
-			for(int i = 0; i < args.length; i++)
-			{
-				System.out.println(args[i]);
-			}
-			System.err.println("Invalide args");
-		}
-		try {
-			String name = "Compute";
 
-			Registry registry = LocateRegistry.getRegistry(host,port);
-			BulletinBoard comp = (BulletinBoard) registry.lookup(name);
+    public static final String USAGE =
+            "Usage: COMMAND [REPLY_ID|OFFSET|ARTICLE_ID] [SERVER HOST] [SERVER PORT]\n" +
+            "  COMMAND: Either POST, LIST, or GET, case insensitive\n" +
+            "      POST: post a new article. Content is read from STDIN.\n" +
+            "            REPLY_ID _must_ be present, and equal to 0 if not replying\n" +
+            "            to an existing post.\n" +
+            "      LIST: list articles on the server, up to 10 at a time.\n" +
+            "            OFFSET must be present. Use\n" +
+            "            0 to read articles from the beginning." +
+            "      GET: get a specific article on the server. ARTICLE_ID must\n" +
+            "           be present.";
 
-			//Messages task = new Messages(message,sendReceive);
-			//Message ret = comp.sendReceive(task);
+    /**
+     * Sends a command to a random server in the cluster and writes the response to STDOUT.
+     */
+    public static void main(String args[]) throws Throwable
+    {
+        if (args.length != 4)
+        {
+            System.err.println(USAGE);
+            System.exit(255);
+        }
 
-			
-		}catch(Exception e){
-			System.err.println("Client exception:");
-			e.printStackTrace();
-		}
-	}
+        final String host = args[2];
+        final int port = Integer.parseInt(args[3]);
+
+        // connect to server
+        Registry reg = LocateRegistry.getRegistry(host, port);
+        BulletinBoard server = (BulletinBoard) reg.lookup("Compute");
+
+        final String command = args[0];
+        if ("post".equals(command.toLowerCase()))
+        {
+            int parent = Integer.parseInt(args[1]);
+
+            // slurp STDIN
+            Scanner scanner = new Scanner(System.in).useDelimiter("\\Z");
+            String content = scanner.nextLine();
+            scanner.close();
+
+            Article article = new Article(content, parent);
+
+            server.post(article);
+
+            System.err.println("Article posted.");
+        }
+        else if ("list".equals(command.toLowerCase()))
+        {
+            int offset = Integer.parseInt(args[1]);
+
+            List<Article> articles = server.getArticles(); // TODO offset and limit to 10
+            for (Article article : articles)
+            {
+                // display excerpt
+                // TODO indentation for reply chains
+                System.out.println(
+                        String.format("Article %s: %s...",
+                                article.id,
+                                article.content.substring(0, 100)));
+            }
+        }
+        else if ("get".equals(command.toLowerCase()))
+        {
+            Article article = server.choose(Integer.parseInt(args[1]));
+            System.out.println(String.format("Article %s\n%s", article.id, article.content));
+        }
+        else
+        {
+            System.err.println(USAGE);
+            System.exit(255);
+        }
+    }
 }
