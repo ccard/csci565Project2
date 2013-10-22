@@ -99,6 +99,7 @@ public class Server implements BulletinBoard
 
 	/**
 	* This method registars a slave node with the master node
+	* @param is in the form of <hostname>:<port>
 	*/
 	public void registerSlaveNode(String slaveNodeAddress) throws RemoteException
 	{
