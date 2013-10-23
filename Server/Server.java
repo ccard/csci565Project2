@@ -1,26 +1,26 @@
 /**
 * @Author Chris Card
-* CSCI 565 project 1
-* This file defines the rmi method sendReceive and also starts the server
+* CSCI 565 project 2
+* This file contains all the functionality to register each server on a port
 */
 
 package Server;
 
-import java.rmi.RemoteException;
-import java.rmi.NotBoundException;
+
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import Compute.BulletinBoard;
-import Compute.Article;
-import java.util.concurrent.*;
-import java.util.*;
 import java.lang.Runtime;
 import java.io.*;
 
 public class Server
 {
-
+    /**
+     * This method checks to see if the input args wanted to start a master server
+     * @param args from the command line
+     * @return true if args contained "-master"
+     */
 	public static boolean isMaster(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
@@ -31,6 +31,11 @@ public class Server
 		return false;
 	}
 
+    /**
+     * This gets the socket number from the command line args
+     * @param args cmd line args
+     * @return the socket number or -1 if none was found
+     */
 	public static int socket(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
@@ -47,6 +52,13 @@ public class Server
 		return -1;
 	}
 
+    /**
+     * This method resolves the masters hostname and socket from
+     * the cmd line args
+     * @param args cmd line arges
+     * @return the masters hostname and socket in the form of
+     *          <hostname>:<socket> or null
+     */
 	public static String getMasterName(String[] args)
 	{
 		for (int i = 0; i < args.length; i++) {
@@ -85,7 +97,7 @@ public class Server
 	}
 
 	/**
-	* @param list of arguments in the following formate
+	* @param args list of arguments in the following formate
 	*     -s <socket> "Provides the socket number"
 	*	  -master (only when instantiating the master server)
 	* 	  -slave (only when instantiating the slave server)

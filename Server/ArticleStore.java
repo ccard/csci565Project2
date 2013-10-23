@@ -1,3 +1,7 @@
+/**
+ * @Author Chris Card, Steven  Rupert
+ * This is the local data base store for each server
+ */
 package Server;
 
 import Compute.Article;
