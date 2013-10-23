@@ -46,7 +46,7 @@ Running:
 					java runServer -s <socket> -slave -mhost <master hostame>:<master socket>
 
 			2) To run a predefined set of servers run command:
-				java startServers
+				java startServers [-start | -stop]
 
 				Note: this command reads the file called hosts.txt which must be in the following formate
 				and the first line must be the master server definition:
