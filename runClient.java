@@ -1,5 +1,5 @@
 /**
-* @Author Chris Card
+* @Author Chris Card, Steven Rupert
 * This file is responsible for running the client
 */
 
