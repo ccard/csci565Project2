@@ -26,6 +26,12 @@ public class MasterServer implements BulletinBoard
     private List<BulletinBoard> slaves;
     private ArticleStore articleStore;
 
+    /**
+     * Constructor to Make masterserver node and initialize all necessary components
+     * @param hostnameAndPort This contains the hostname and port of the master to
+     *                        name the data base file after and should be in the form
+     *                        of <hostname>:<socket>
+     */
 	public MasterServer(String hostnameAndPort)
 	{
         slaves = Collections.synchronizedList(new ArrayList<BulletinBoard>());
@@ -41,6 +47,7 @@ public class MasterServer implements BulletinBoard
         articleStore.initializeTable();
         articleStore.initializeCountTable();
 
+        //Controlls conncurrent bord cast of replications to the quorum
         executorService = Executors.newCachedThreadPool();
     }
 
@@ -48,8 +55,16 @@ public class MasterServer implements BulletinBoard
 	// Client RPC Methods
 	//##################################################################
 
+    /**
+     * This method gets the article id and then replicates the post to
+     * all servers that are in the quorum
+     * @param input article for master to post and then replicate to all
+     *              other slaves
+     * @throws RemoteException
+     */
 	public void post(Article input) throws RemoteException
     {
+        //creates a new article with a unique id
         final Article article = input.setId(articleStore.generateKey());
 
         // TODO let client set either ALL quorum level or QUORUM level depending on their
@@ -87,6 +102,11 @@ public class MasterServer implements BulletinBoard
         } catch (InterruptedException ignored) {}
     }
 
+    /**
+     * Gets all articles from the quorum of reads operations
+     * @return list of all articles in the quorum with no duplicates
+     * @throws RemoteException
+     */
 	public List<Article> getArticles() throws RemoteException
     {
         // strategy: collect all returned articles from the nodes into a set,
@@ -134,6 +154,12 @@ public class MasterServer implements BulletinBoard
         catch (InterruptedException e) { throw new RuntimeException(e); }
     }
 
+    /**
+     * This method returns an article with the selected id from the read quorum
+     * @param id of the article
+     * @return the desired article
+     * @throws RemoteException
+     */
 	public Article choose(final int id) throws RemoteException
     {
         // article will be the final returned article from the slaves
@@ -194,6 +220,10 @@ public class MasterServer implements BulletinBoard
 	// Server RPC Methods
 	//##################################################################
 
+    /**
+     * This method writes the article that is to be replicated
+     * @param article
+     */
 	public void replicateWrite(Article article)
 	{
         articleStore.insert(article);
@@ -219,6 +249,13 @@ public class MasterServer implements BulletinBoard
 		}
 	}
 
+    /**
+     * This method returns the article from the local machine with the specified
+     * id
+     * @param id of the article to search for
+     * @return desired article
+     * @throws RemoteException throws error if article is not found
+     */
     @Override
     public Article getLocalArticle(int id) throws RemoteException
     {
@@ -230,6 +267,11 @@ public class MasterServer implements BulletinBoard
         return article;
     }
 
+    /**
+     * This method gets the list of local articles
+     * @return the list of local articles
+     * @throws RemoteException
+     */
     @Override
     public List<Article> getLocalArticles() throws RemoteException
     {
