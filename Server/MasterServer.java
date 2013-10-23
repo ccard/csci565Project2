@@ -1,5 +1,5 @@
 /**
-* @Author Chris Card
+* @Author Chris Card, Steven Rupert
 * CSCI 565 project 1
 * This file defines the Master server methods
 */
