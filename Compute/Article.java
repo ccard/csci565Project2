@@ -33,7 +33,7 @@ public class Article implements Serializable
 		this.parent = parent;
 	}
 
-	public Article setId(int id)	
+	public Article setId(int id)
 	{
 		return new Article(this.content,id,this.parent);
 	}

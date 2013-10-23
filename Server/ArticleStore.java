@@ -20,22 +20,25 @@ import java.util.*;
 public interface ArticleStore
 {
     @SqlUpdate("create table if not exists " +
-               "articles (id int primary key auto_increment, parent int, content text)")
+               "articles (id int primary key, parent int, content    text)")
     void initializeTable();
 
-    /**
-     * Id is auto-incremented for ordering. Article id on the parameter is ignored. Used
-     * by client's POST method.
-     */
-    @SqlUpdate("insert into articles (content, parent) values (:content, :parent)")
-    @GetGeneratedKeys
-    int insert(@BindBean Article article);
+    // other_column is necessary in order to insert stuff into the auto-incremented table.
+    @SqlUpdate("create table if not exists last_promised_key " +
+               "(id int primary key auto_increment, other_column int default 0)")
+    void initializeCountTable();
 
     /**
-     * Used for server replication, not by clients.
+     * Generate a new unique key by abusing autoincrement semantics in a separate table.
+     * Once "promised" by performing an insert, then it'll either get used with an article
+     * or if the write fails, it will never be used, ever.
      */
+    @SqlUpdate("insert into last_promised_key values(DEFAULT)")
+    @GetGeneratedKeys
+    int generateKey();
+
     @SqlUpdate("insert into articles (id, content, parent) values (:id, :content, :parent)")
-    void insertWithId(Article article);
+    void insert(@BindBean Article article);
 
     @SqlQuery("select * from articles")
     List<Article> getAll();

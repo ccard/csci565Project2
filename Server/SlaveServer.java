@@ -88,7 +88,7 @@ public class SlaveServer implements BulletinBoard
 
 	public void replicateWrite(Article article)
 	{
-        articleStore.insertWithId(article);
+        articleStore.insert(article);
 	}
 
 	/**
