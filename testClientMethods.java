@@ -23,23 +23,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class testClientMethods
 {
-   ArrayList<String> servers;
+   ArrayList<String> serverstext;
 
    public testClientMethods()
    {
-       servers = new ArrayList<String>();
-       servers.add("master::bb136-19.mines.edu::5555");
-       servers.add("slave::bb136-10.mines.edu::5555");
-       servers.add("slave::bb136-10.mines.edu::5556");
-       servers.add("slave::bb136-11.mines.edu::5555");
-
-
+       serverstext = new ArrayList<String>();
+       serverstext.add("master::bb136-19.mines.edu::5555");
+       serverstext.add("slave::bb136-10.mines.edu::5555");
+       serverstext.add("slave::bb136-10.mines.edu::5556");
+       serverstext.add("slave::bb136-11.mines.edu::5555");
    }
 
-   private void startServers()
+   public void start()
    {
-
+        startServers.startServers(serverstext);
    }
+
+    public void stop()
+    {
+        startServers.stopServers(serverstext);
+    }
+
+
 
     private class  Client
     {
@@ -186,7 +191,7 @@ public class testClientMethods
 
             final Article articles[] = a;
             int article = 0;
-            final CountDownLatch latch = new CountDownLatch((slaves.size()));
+            final CountDownLatch latch = new CountDownLatch(servers.size());
 
             for (final BulletinBoard node : servers)
             {

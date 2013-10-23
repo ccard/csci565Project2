@@ -65,6 +65,73 @@ class startServers
      * and the socket to start it on and whether or not it is a master or slave
      * @param file the name of the host file
      */
+    public static void startServers(ArrayList<String> file)
+    {
+        String master = "";
+        String path = getPath();
+
+        for (String line : file)
+        {
+            String params[] = line.split("::");
+
+
+            if (master.isEmpty() && params[0].compareTo("master") == 0)
+            {
+                master = params[1]+":"+params[2];
+                startServer(path,params[1],"-s "+params[2]+" -master");
+            }
+            else if (master.isEmpty())
+            {
+                System.err.println("Host file incorrect formate master should be the first value");
+                System.exit(2);
+            }
+
+            if (params[0].compareTo("slave") == 0)
+            {
+                startServer(path,params[1],"-s "+params[2]+" -slave -mhost "+master);
+            }
+        }
+    }
+
+    /**
+     * This stops the servers in the hosts file
+     * @param file the host file
+     */
+    public static void stopServers(ArrayList<String> file)
+    {
+        Set<String> hostnames = new HashSet<String>();
+
+        for (String line : file)
+        {
+            String params[] = line.split("::");
+            hostnames.add(params[1]);
+        }
+
+        for (String host : hostnames)
+        {
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"\"pkill java\"");
+
+            run.redirectErrorStream(true);
+            try {
+                Process p = run.start();
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line = "";
+                while ((line = in.readLine()) != null)
+                {
+                    System.out.println(line);
+                }
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+        }
+    }
+    /**
+     * This Method starts servers based on a host file that defines where to start the server
+     * and the socket to start it on and whether or not it is a master or slave
+     * @param file the name of the host file
+     */
 	public static void startServers(String file)
 	{
 		try
