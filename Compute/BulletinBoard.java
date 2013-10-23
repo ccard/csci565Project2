@@ -15,15 +15,20 @@ public interface BulletinBoard extends Remote{
 	void post(Article article) throws RemoteException;
 	List<Article> getArticles() throws RemoteException;
 	Article choose(int id) throws RemoteException;
-	
+
 	//Slave method
 	void replicateWrite(Article article) throws RemoteException;
 
 	//Master method
 	/**
 	* This method registars the Slave nodes with the master node
-	* @param the address of the slave node in the form of 
+	* @param the address of the slave node in the form of
 	*		<slavehostname>:<portnumber>
 	*/
 	void registerSlaveNode(BulletinBoard slave) throws RemoteException;
+
+    // i.e. hit local database instead of quorum writes. Only nodes call these methods.
+    // TODO split interface to make this more explicit
+    Article getLocalArticle(int id) throws RemoteException;
+    List<Article> getLocalArticles() throws RemoteException;
 }

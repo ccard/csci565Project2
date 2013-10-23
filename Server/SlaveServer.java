@@ -6,19 +6,14 @@
 
 package Server;
 
-import java.rmi.RemoteException;
-import java.rmi.NotBoundException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import Compute.BulletinBoard;
 import Compute.Article;
+import Compute.BulletinBoard;
 import org.skife.jdbi.v2.DBI;
 
-import java.util.concurrent.*;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.*;
-import java.lang.Runtime;
-import java.io.*;
 
 public class SlaveServer implements BulletinBoard
 {
@@ -29,14 +24,14 @@ public class SlaveServer implements BulletinBoard
 
 
     /**
-	* @param master true if it is the master node false if it a slave node
-	* @param the location of the master node if it is a slave node this will be
+	* @param masterName true if it is the master node false if it a slave node
+	* @param serverName the location of the master node if it is a slave node this will be
 	* 		 a string in the form of <masterhostname>:<masterportnumber>
 	*/
 	public SlaveServer(String masterName, String serverName)
 	{
         // connect to embedded article database
-        DBI dbi = new DBI("jdbc:h2:mem:test");
+        DBI dbi = new DBI("jdbc:h2:dbs/" + serverName.replace(':', '_'));
         articleStore = dbi.onDemand(ArticleStore.class);
         articleStore.initializeTable();
 
@@ -92,8 +87,8 @@ public class SlaveServer implements BulletinBoard
 	}
 
 	/**
-	* This method registars a slave node with the master node
-	* @param is in the form of <hostname>:<port>
+	* This method registers a slave node with the master node
+	* @param slave slave bulletinBoard to register.
 	*/
 	public void registerSlaveNode(BulletinBoard slave) throws RemoteException
 	{
@@ -107,4 +102,21 @@ public class SlaveServer implements BulletinBoard
 				System.exit(2);
 			}
 	}
+
+    @Override
+    public Article getLocalArticle(int id) throws RemoteException
+    {
+        Article article = articleStore.get(id);
+        if (null == article)
+        {
+            throw new RemoteException("404 not found");
+        }
+        return article;
+    }
+
+    @Override
+    public List<Article> getLocalArticles() throws RemoteException
+    {
+        return articleStore.getAll();
+    }
 }

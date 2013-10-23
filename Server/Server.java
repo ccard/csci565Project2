@@ -99,7 +99,9 @@ public class Server
 
 			int port  = socket(args);
 			boolean master = isMaster(args);
-			BulletinBoard engine = (master ? new MasterServer() : new SlaveServer(getMasterName(args),getHost()+":"+port));
+            BulletinBoard engine =
+                    (master ? new MasterServer(getHost() + "_" + port)
+                            : new SlaveServer(getMasterName(args), getHost() + ":" + port));
 
 			BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 
@@ -115,7 +117,7 @@ public class Server
 			//Notifies user the server was bound to the socket
 			System.out.println("Server bound to socket: "+port);
 			System.out.println("EOF");
-		} 
+		}
 		catch (Exception e)
 		{
 			System.err.println("Server exception:");

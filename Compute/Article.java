@@ -5,14 +5,35 @@
 
 package Compute;
 
+import com.google.common.collect.ComparisonChain;
+
 import java.io.Serializable;
 import java.util.*;
 
-public class Article implements Serializable
+public class Article implements Serializable, Comparable<Article>
 {
 	private static final long serialVersionUID = 227L;
 
-	public final String content;
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Article article = (Article) o;
+
+        if (id != article.id) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return id;
+    }
+
+    public final String content;
 	public final int id;
 	public final int parent;
 
@@ -37,4 +58,12 @@ public class Article implements Serializable
 	{
 		return new Article(this.content,id,this.parent);
 	}
+
+    // order by id
+    @Override
+    public int compareTo(Article that)
+    {
+        return ComparisonChain.start()
+                .compare(this.id, that.id).result();
+    }
 }
