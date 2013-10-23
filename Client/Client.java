@@ -8,6 +8,7 @@ import java.rmi.registry.Registry;
 import java.util.*;
 
 /**
+ * @Author Chris Card, Steven Rupert
  * Bulletin Board client program. Reads and writes articles hosted on the distributed
  * Bulletin Board system.
  */
