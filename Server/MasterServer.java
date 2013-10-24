@@ -131,7 +131,9 @@ public class MasterServer implements BulletinBoard
         final SortedSet<Article> articles =
                 Collections.synchronizedSortedSet(Sets.<Article>newTreeSet());
 
-        final CountDownLatch latch = new CountDownLatch((slaves.size() + 1) / 2); // read quorum
+        final CountDownLatch latch = new CountDownLatch(
+                (int) Math.ceil((slaves.size() + 1.) / 2.)
+        ); // read quorum
 
         // TODO randomize order to balance reads between slaves
         for (final BulletinBoard node : nodes)
@@ -148,8 +150,7 @@ public class MasterServer implements BulletinBoard
                         latch.countDown();
                     } catch (RemoteException e)
                     {
-                        // TODO log
-                        e.printStackTrace();
+                        log.error("Couldn't get local articles!", e);
                     }
                 }
             });
@@ -160,6 +161,7 @@ public class MasterServer implements BulletinBoard
             boolean succeeded = latch.await(5, TimeUnit.SECONDS);
             if (succeeded)
             {
+                log.info("Listed {} articles", articles.size());
                 return Lists.newArrayList(articles);
             } else
             {
@@ -198,8 +200,7 @@ public class MasterServer implements BulletinBoard
                         latch.countDown();
                     } catch (RemoteException e) // thrown if not found
                     {
-                        // TODO log
-                        e.printStackTrace();
+                        log.error("Couldn't get local article!", e);
                     }
                 }
             });
@@ -226,9 +227,6 @@ public class MasterServer implements BulletinBoard
         {
             throw new RuntimeException(e);
         }
-
-
-        // TODO broadcast get at quorum read level
     }
 
 	//##################################################################

@@ -1,10 +1,10 @@
 all: server client test
 
 server:
-		  javac -cp lib/*:. Server/*.java 
+		  javac -cp lib/*:. Server/*.java
 
 client:
-		  javac Client/Client.java
+		  javac -cp lib/*:. Client/Client.java
 
 run:
 		  javac runServer.java startServers.java

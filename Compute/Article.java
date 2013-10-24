@@ -37,7 +37,24 @@ public class Article implements Serializable, Comparable<Article>
 	public final int id;
 	public final int parent;
 
-	/**
+    // getters are necessary for javabeans-based JDBI field detection
+
+    public String getContent()
+    {
+        return content;
+    }
+
+    public int getId()
+    {
+        return id;
+    }
+
+    public int getParent()
+    {
+        return parent;
+    }
+
+    /**
 	* Constructor
 	* @param msg message to store
 	* @param type the type of action to take when sent to the server, either send or receive

@@ -2,6 +2,8 @@ package Client;
 
 import Compute.Article;
 import Compute.BulletinBoard;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -23,7 +25,7 @@ public class Client
             "            to an existing post.\n" +
             "      LIST: list articles on the server, up to 10 at a time.\n" +
             "            OFFSET must be present. Use\n" +
-            "            0 to read articles from the beginning." +
+            "            0 to read articles from the beginning.\n" +
             "      GET: get a specific article on the server. ARTICLE_ID must\n" +
             "           be present.";
 
@@ -66,14 +68,39 @@ public class Client
             int offset = Integer.parseInt(args[1]);
 
             List<Article> articles = server.getArticles(); // TODO offset and limit to 10
+            // index by id
+            Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
+            {
+                @Override
+                public Integer apply(Compute.Article article)
+                {
+                    return article.id;
+                }
+            });
             for (Article article : articles)
             {
                 // display excerpt
-                // TODO indentation for reply chains
+                StringBuilder indent = new StringBuilder();
+                int parent = article.parent;
+                while (parent != 0)
+                {
+                    if (articlesById.containsKey(parent))
+                    {
+                        indent.append("  ");
+                        parent = articlesById.get(parent).parent;
+                    } else
+                    {
+                        break;
+                    }
+                }
                 System.out.println(
-                        String.format("Article %s: %s...",
+                        String.format("%sArticle %s: %s%s",
+                                indent.toString(),
                                 article.id,
-                                article.content.substring(0, 100)));
+                                article.content.substring(
+                                        0,
+                                        Math.min(article.content.length(), 100)),
+                                article.content.length() > 100 ? "..." : ""));
             }
         }
         else if ("get".equals(command.toLowerCase()))
