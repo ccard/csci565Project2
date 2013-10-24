@@ -12,13 +12,13 @@ def showUsage
                  0 to read articles from the beginning.
            GET: get a specific article on the server. ARTICLE_ID must\n
                 be present.
-   EOF
+EOF
    exit()
 end
 
 
 showUsage unless ARGV.size == 4
 
-cmd = "java -Djava.rmi.server.codebase=http://"#{`hostname`.chomp}:#{`pwd`.chomp} /Client/ Client.Client #{ARGV[0]} #{ARGV[1]} #{ARGV[2]} #{ARGV[3]}"
-
+cmd = "java -Djava.rmi.server.codebase=http://#{`hostname`.chomp}.mines.edu:#{`pwd`.chomp}/Client/ Client.Client #{ARGV[0]} #{ARGV[1]} #{ARGV[2]} #{ARGV[3]}"
+puts cmd
 exec(cmd)
