@@ -1,7 +1,8 @@
 /**
 * @Author Chris Card, Steven Rupert
 * This file reads in a host file and starts the servers based on that file
-*/
+*//*
+
 
 import java.lang.*;
 import java.util.*;
@@ -14,11 +15,13 @@ class startServers
 
 
 
-    /**
+    */
+/**
      * This Method starts servers based on a host file that defines where to start the server
      * and the socket to start it on and whether or not it is a master or slave
      * @param file the name of the host file
-     */
+     *//*
+
 	public static void startServers(String file)
 	{
 		try
@@ -59,10 +62,12 @@ class startServers
 		}
 	}
 
-    /**
+    */
+/**
      * This stops the servers in the hosts file
      * @param file the host file
-     */
+     *//*
+
     public static void stopServers(String file)
     {
         Set<String> hostnames = new HashSet<String>();
@@ -121,3 +126,4 @@ class startServers
         }
 	}
 }
+*/

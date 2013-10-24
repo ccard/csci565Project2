@@ -128,7 +128,7 @@ public class Server
 
 			//Notifies user the server was bound to the socket
 			System.out.println("Server bound to socket: "+port);
-			//System.out.println("EOF");
+			System.out.println("EOF");
 		}
 		catch (Exception e)
 		{

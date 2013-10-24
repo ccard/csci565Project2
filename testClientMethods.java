@@ -1,12 +1,13 @@
 import Compute.Article;
 import Compute.BulletinBoard;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,24 +25,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class testClientMethods
 {
    ArrayList<String> serverstext;
+   Client client1,client2,client3;
 
    public testClientMethods()
    {
        serverstext = new ArrayList<String>();
        serverstext.add("master::bb136-19.mines.edu::5555");
-       serverstext.add("slave::bb136-10.mines.edu::5555");
-       serverstext.add("slave::bb136-10.mines.edu::5556");
+       serverstext.add("slave::bb136-12.mines.edu::5555");
+       serverstext.add("slave::bb136-12.mines.edu::5556");
        serverstext.add("slave::bb136-11.mines.edu::5555");
+       start();
+       client1 = new Client(serverstext.get(2));
+       client2 = new Client(serverstext.get(0),serverstext.get(3));
+       client3 = new Client(serverstext.get(1));
    }
 
-   public void start()
+   private void start()
    {
-        startServers.startServers(serverstext);
+        startServers(serverstext);
    }
 
     public void stop()
     {
-        startServers.stopServers(serverstext);
+        stopServers(serverstext);
+    }
+
+
+    public void testPostGetSingleClient()
+    {
+
     }
 
 
@@ -224,13 +236,138 @@ public class testClientMethods
                 }
             } catch (InterruptedException ignored) {}
         }
-
     }
 
 
+    /**
+     * Gets the path to the current directory
+     * @return the path of the current directory
+     */
+    public static String getPath()
+    {
+        String line = "",line2="";
+
+        try{
+            Process p = Runtime.getRuntime().exec("pwd");
+
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            while ((line = b.readLine()) != null)
+            {
+                line2 = line.replace("\n","").replace("\r","");
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to find path!");
+            e.printStackTrace();
+        }
+        return line2;
+    }
+
+    /**
+     * This method starts a server either on a romote machine or the current machine
+     * @param path the path to the base directory of the runServer file
+     * @param host hostname of the computer to start the server
+     * @param args the arguments to be passed to the server on the cmd line
+     */
+    public static void startServer(String path, String host, String args)
+    {
+        try
+        {
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
+            run.redirectErrorStream(true);
+            Process p = run.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = "";
+            while ((line = b.readLine()) != null)
+            {
+                if (line.compareTo("EOF") == 0) break;
+                System.out.println(line);
+            }
+        }
+        catch(Exception e)
+        {
+            System.err.println("Failed to start a server");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * This Method starts servers based on a host file that defines where to start the server
+     * and the socket to start it on and whether or not it is a master or slave
+     * @param file the name of the host file
+     */
+    public static void startServers(ArrayList<String> file)
+    {
+        String master = "";
+        String path = getPath();
+
+        for (String line : file)
+        {
+            String params[] = line.split("::");
+
+
+            if (master.isEmpty() && params[0].compareTo("master") == 0)
+            {
+                master = params[1]+":"+params[2];
+                startServer(path,params[1],"-s "+params[2]+" -master");
+            }
+            else if (master.isEmpty())
+            {
+                System.err.println("Host file incorrect formate master should be the first value");
+                System.exit(2);
+            }
+
+            if (params[0].compareTo("slave") == 0)
+            {
+                startServer(path,params[1],"-s "+params[2]+" -slave -mhost "+master);
+            }
+        }
+    }
+
+    /**
+     * This stops the servers in the hosts file
+     * @param file the host file
+     */
+    public static void stopServers(ArrayList<String> file)
+    {
+        Set<String> hostnames = new HashSet<String>();
+
+        for (String line : file)
+        {
+            String params[] = line.split("::");
+            hostnames.add(params[1]);
+        }
+
+        for (String host : hostnames)
+        {
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
+
+            run.redirectErrorStream(true);
+            try {
+                Process p = run.start();
+
+                BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                String line = "";
+                while ((line = in.readLine()) != null)
+                {
+                    System.out.println(line);
+                }
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     public static void main(String[] args)
     {
-
+        testClientMethods t = new testClientMethods();
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        t.stop();
     }
 }
 
