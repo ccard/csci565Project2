@@ -33,7 +33,7 @@ public class testClientMethods
        serverstext.add("master::bb136-19.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5556");
-       serverstext.add("slave::bb136-11.mines.edu::5555");
+       serverstext.add("slave::bb136-13.mines.edu::5555");
        start();
        client1 = new Client(serverstext.get(2));
        client2 = new Client(serverstext.get(0),serverstext.get(3));
