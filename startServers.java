@@ -230,7 +230,7 @@ class startServers
         else
         {
 		    if (args[0].compareTo("-start") == 0) {startServers("hosts.txt");}
-            else {stopServers("host.txt");}
+            else {stopServers("hosts.txt");}
         }
 	}
 }
