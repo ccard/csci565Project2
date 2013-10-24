@@ -107,7 +107,16 @@ public class SlaveServer implements BulletinBoard
      */
 	public void replicateWrite(Article article)
 	{
-        articleStore.insert(article);
+        try
+        {
+            articleStore.insert(article);
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't replicate write: " + e.getMessage());
+        }
 	}
 
 	/**
@@ -136,7 +145,17 @@ public class SlaveServer implements BulletinBoard
     @Override
     public Article getLocalArticle(int id) throws RemoteException
     {
-        Article article = articleStore.get(id);
+        Article article = null;
+        try
+        {
+            article = articleStore.get(id);
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't read article: " + e.getMessage());
+        }
         if (null == article)
         {
             throw new RemoteException("404 not found");
@@ -152,6 +171,15 @@ public class SlaveServer implements BulletinBoard
     @Override
     public List<Article> getLocalArticles() throws RemoteException
     {
-        return articleStore.getAll();
+        try
+        {
+            return articleStore.getAll();
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't read articles: " + e.getMessage());
+        }
     }
 }

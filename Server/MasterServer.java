@@ -65,7 +65,15 @@ public class MasterServer implements BulletinBoard
 	public void post(Article input) throws RemoteException
     {
         //creates a new article with a unique id
-        final Article article = input.setId(articleStore.generateKey());
+        final int id;
+        try
+        {
+            id = articleStore.generateKey();
+        } catch (Exception e)
+        {
+            throw new RuntimeException("Couldn't generate key " + e.getMessage());
+        }
+        final Article article = input.setId(id);
 
         // TODO let client set either ALL quorum level or QUORUM level depending on their
         // replication needs
@@ -226,8 +234,17 @@ public class MasterServer implements BulletinBoard
      */
 	public void replicateWrite(Article article)
 	{
-        articleStore.insert(article);
-	}
+        try
+        {
+            articleStore.insert(article);
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't replicate write: " + e.getMessage());
+        }
+    }
 
 	/**
 	* This method registars a slave node with the master node
@@ -259,7 +276,17 @@ public class MasterServer implements BulletinBoard
     @Override
     public Article getLocalArticle(int id) throws RemoteException
     {
-        Article article = articleStore.get(id);
+        Article article = null;
+        try
+        {
+            article = articleStore.get(id);
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't read article: " + e.getMessage());
+        }
         if (null == article)
         {
             throw new RemoteException("404 not found");
@@ -275,6 +302,16 @@ public class MasterServer implements BulletinBoard
     @Override
     public List<Article> getLocalArticles() throws RemoteException
     {
-        return articleStore.getAll();
+        try
+        {
+            return articleStore.getAll();
+        } catch (Exception e)
+        {
+            // XXX some exceptions are unserializable so when RMI tries to pass them to
+            // the caller, we get NotSerializableExceptions instead of a proper message.
+            // Thus, wrap message in a serializable runtimeException without a cause.
+            throw new RuntimeException("Couldn't read articles: " + e.getMessage());
+        }
+
     }
 }
