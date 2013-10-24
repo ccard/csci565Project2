@@ -109,7 +109,7 @@ class startServers
 
         for (String host : hostnames)
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"\"pkill java\"");
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
 
             run.redirectErrorStream(true);
             try {
@@ -200,7 +200,7 @@ class startServers
 
         for (String host : hostnames)
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"\"pkill java\"");
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
 
             run.redirectErrorStream(true);
             try {
@@ -230,7 +230,7 @@ class startServers
         else
         {
 		    if (args[0].compareTo("-start") == 0) {startServers("hosts.txt");}
-            else {stopServers("host.txt");}
+            else {stopServers("hosts.txt");}
         }
 	}
 }
