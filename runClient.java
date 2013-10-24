@@ -64,22 +64,21 @@ public class runClient
 	* @param args the args must be in the following order
 	*				1 = host of the server
 	*				2 = socket of the server
-	*				3 = either send | receive
-	*				4 = the path to the message file if send option
+	*				3 = [post | REPLY_ID | OFFSET | ARTICLE_ID]
 	*/
 	public static void main(String[] args)
 	{
-		String message,host,sendReceive,port;
-		if (args.length == 3 || args.length == 4)
+		String message,host,command,port;
+		if (args.length == 4)
 		{
 			host = args[0];
 			port = args[1];
-			sendReceive = args[2];
-			message = (args.length == 4 ? args[3] : "");
+			command = args[2];
+			message = args[3];
 		}
 		else{
 			System.out.println("Incorrect number of args!");
-			System.out.println("java runClient [host] [port] [sending or recieving] [message if sending]");
+			System.out.println("java runClient <host> <port> <command> [REPLY_ID | OFFSET | ARTICLE_ID]");
 			return;
 		}
 		try{
@@ -87,7 +86,7 @@ public class runClient
 			String thisComp = getHost();
 			
 			//builds and redirects the output of the command line call to the client program
-			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+thisComp+path+"/Client/","Client.Client",host,port,sendReceive,message);
+			ProcessBuilder run = new ProcessBuilder("java","-Djava.rmi.server.codebase=http://"+thisComp+path+"/Client/","Client.Client",command,message,host,port);
 			run.redirectErrorStream(true);
 			Process p = run.start();
 
