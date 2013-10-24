@@ -37,7 +37,7 @@ public interface ArticleStore
      * Once "promised" by performing an insert, then it'll either get used with an article
      * or if the write fails, it will never be used, ever.
      */
-    @SqlUpdate("insert into last_promised_key values(DEFAULT)")
+    @SqlUpdate("insert into last_promised_key (other_column) values (DEFAULT)")
     @GetGeneratedKeys
     int generateKey();
 
