@@ -1,4 +1,4 @@
-all: server client run test
+all: server client test
 
 server:
 		  javac -cp lib/*:. Server/*.java 
