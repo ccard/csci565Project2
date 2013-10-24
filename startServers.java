@@ -200,7 +200,7 @@ class startServers
 
         for (String host : hostnames)
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"\"pkill java\"");
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
 
             run.redirectErrorStream(true);
             try {
