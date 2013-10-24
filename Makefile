@@ -7,7 +7,7 @@ client:
 		  javac Client/Client.java
 
 run:
-		  javac runClient.java runServer.java startServers.java
+		  javac runServer.java startServers.java
 
 test:
 		javac -cp lib/*:. testClientMethods.java
