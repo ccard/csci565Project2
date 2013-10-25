@@ -35,7 +35,7 @@ To start a cluster of servers:
 
     java startServers [-start | -stop]
 
-Note: this command reads the file called `hosts.txt` which has
+**Note**: this command reads the file called `hosts.txt` which has
 lines in the following format:
 
     [master | slave]::<hostname>::<socket>
@@ -59,7 +59,7 @@ To run an Client program use:
 -***COMMAND***: Either POST, LIST, or GET all ***Case Insensitive***
 
 -***POST***: Post a new article or reply to post. ***Content is read from STDIN***
-       REPLY_ID ***MUST*** be present, if not replying to existing post set to 0
+       REPLY_ID ***MUST*** be present, if not replying to existing post set to 0.
 
 -***LIST***: List articles on the server, there is a limit of *10* at a time
         OFFSET must be present and used to list *10* articles at a time
@@ -69,4 +69,11 @@ To run an Client program use:
 
 ## Tests
 
+-To run the tests:
+
+    java testClientMethods
+
+This will print out success if the tests pass other wise it will through an error
+
+-To run the bench mark:
 
