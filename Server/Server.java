@@ -10,7 +10,7 @@ package Server;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import Compute.BulletinBoard;
+import Domain.BulletinBoard;
 import java.lang.Runtime;
 import java.io.*;
 
@@ -107,7 +107,7 @@ public class Server
 	{
 		try
 		{
-			String name = "Compute";
+			String name = "Domain";
 
 			int port  = socket(args);
 			boolean master = isMaster(args);

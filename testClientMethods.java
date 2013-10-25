@@ -1,5 +1,5 @@
-import Compute.Article;
-import Compute.BulletinBoard;
+import Domain.Article;
+import Domain.BulletinBoard;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @Author Chris card, Steven Rupert
@@ -94,7 +93,7 @@ public class testClientMethods
                 port = Integer.parseInt(socket);
 
                 Registry reg = LocateRegistry.getRegistry(host,port);
-                BulletinBoard comp = (BulletinBoard)reg.lookup("Compute");
+                BulletinBoard comp = (BulletinBoard)reg.lookup("Domain");
                 return comp;
             }
             catch (Exception e)

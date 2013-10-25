@@ -1,4 +1,4 @@
-all: server client test
+all: server client test domain
 
 server:
 		  javac -cp lib/*:. Server/*.java
@@ -12,12 +12,8 @@ run:
 test:
 		javac -cp lib/*:. testClientMethods.java
 
-compute:
-		  javac Compute/BulletinBoard.java Compute/Article.java
-		  jar cvf Compute/compute.jar Compute/*.class
-
 clean:
 		  rm -f Server/*.class
 		  rm -f Client/*.class
-		  rm -f Compute/*.class
+		  rm -f Domain/*.class
 		  rm -f *.class

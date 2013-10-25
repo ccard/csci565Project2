@@ -9,7 +9,7 @@ CSCI 565 Project 2: Distributed Bulletin Board
 - Server/:
 - Client/:
 - lib/:
-- Compute/:
+- Domain/:
 - dbs/:
 - runServer.java:
 - runClient.java:
@@ -24,7 +24,7 @@ TODO
 ### Build
 
     make
-    
+
 ### Running the Servers
 
 To run a single server:
@@ -34,7 +34,7 @@ To run a single server:
 To start a cluster of servers:
 
     java startServers [-start | -stop]
-    
+
 Note: this command reads the file called `hosts.txt` which has
 lines in the following format:
 

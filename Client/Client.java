@@ -1,16 +1,19 @@
 package Client;
 
-import Compute.Article;
-import Compute.BulletinBoard;
+import Domain.Article;
+import Domain.BulletinBoard;
 import com.google.common.base.Function;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
+import com.google.common.collect.TreeMultimap;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
 
 /**
- * @Author Chris Card, Steven Rupert
+ * @author Chris Card, Steven Rupert
  * Bulletin Board client program. Reads and writes articles hosted on the distributed
  * Bulletin Board system.
  */
@@ -45,7 +48,7 @@ public class Client
 
         // connect to server
         Registry reg = LocateRegistry.getRegistry(host, port);
-        BulletinBoard server = (BulletinBoard) reg.lookup("Compute");
+        BulletinBoard server = (BulletinBoard) reg.lookup("Domain");
 
         final String command = args[0];
         if ("post".equals(command.toLowerCase()))
@@ -68,39 +71,54 @@ public class Client
             int offset = Integer.parseInt(args[1]);
 
             List<Article> articles = server.getArticles(); // TODO offset and limit to 10
-            // index by id
+
             Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
             {
                 @Override
-                public Integer apply(Compute.Article article)
+                public Integer apply(Domain.Article article)
                 {
                     return article.id;
                 }
             });
+
+            // index replies
+            TreeMultimap<Article, Article> replies = TreeMultimap.create();
             for (Article article : articles)
             {
-                // display excerpt
-                StringBuilder indent = new StringBuilder();
-                int parent = article.parent;
-                while (parent != 0)
+                if (article.id != article.parent && articlesById.containsKey(article.parent))
                 {
-                    if (articlesById.containsKey(parent))
-                    {
-                        indent.append("  ");
-                        parent = articlesById.get(parent).parent;
-                    } else
-                    {
-                        break;
-                    }
+                    replies.put(articlesById.get(article.parent), article);
                 }
+            }
+
+            Deque<Deque<Article>> stack = Queues.newArrayDeque();
+            stack.push(Queues.<Article>newArrayDeque());
+
+            // add root articles (reply to 0)
+            for (Article article : articles)
+            {
+                if (article.parent == 0)
+                {
+                    stack.peek().add(article);
+                }
+            }
+
+            // list articles by id and reply order (preorder traversal)
+            while (stack.size() > 0 && stack.peek().size() > 0)
+            {
+                Article a = stack.peek().pop();
                 System.out.println(
                         String.format("%sArticle %s: %s%s",
-                                indent.toString(),
-                                article.id,
-                                article.content.substring(
-                                        0,
-                                        Math.min(article.content.length(), 100)),
-                                article.content.length() > 100 ? "..." : ""));
+                                Strings.repeat("  ", stack.size() - 1),
+                                a.id,
+                                a.content.substring(0, Math.min(a.content.length(), 50)),
+                                a.content.length() > 50 ? "..." : ""));
+
+                stack.push(Queues.newArrayDeque(replies.get(a)));
+                while (stack.size() > 0 && stack.peek().isEmpty())
+                {
+                    stack.pop();
+                }
             }
         }
         else if ("get".equals(command.toLowerCase()))
