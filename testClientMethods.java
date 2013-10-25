@@ -52,7 +52,13 @@ public class testClientMethods
 
     public void testPostGetSingleClient()
     {
+       Random rand = new Random(System.currentTimeMillis());
 
+       switch (rand.nextInt(3))
+       {
+           case 0:
+              int id = client1.postArticle(new Article("This is your friendly tester",0));
+       }
     }
 
 
@@ -120,7 +126,7 @@ public class testClientMethods
          * @param a The article to post
          * @throws AssertionError
          */
-        public void postArticle(Article a) throws AssertionError
+        public int postArticle(Article a) throws AssertionError
         {
             Random rand = new Random(System.currentTimeMillis());
 
@@ -128,7 +134,7 @@ public class testClientMethods
 
             try
             {
-                servers.get(choice).post(a);
+                return servers.get(choice).post(a);
             }
             catch (RemoteException e)
             {

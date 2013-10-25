@@ -12,8 +12,28 @@ import java.util.*;
 
 public interface BulletinBoard extends Remote {
 	//Defines client rmi methods
+
+    /**
+     * This method posts the article to the write quorum
+     * @param article article to post
+     * @return the articles id
+     * @throws RemoteException if post failed
+     */
 	int post(Article article) throws RemoteException;
+
+    /**
+     * This method gets all the articles from the read quorum
+     * @return
+     * @throws RemoteException if no articles are found
+     */
 	List<Article> getArticles() throws RemoteException;
+
+    /**
+     * This method returns a specific article
+     * @param id the id of the desired article
+     * @return the article
+     * @throws RemoteException  if the article is not found
+     */
 	Article choose(int id) throws RemoteException;
 
 	//Slave method
@@ -22,8 +42,9 @@ public interface BulletinBoard extends Remote {
 	//Master method
 	/**
 	* This method registars the Slave nodes with the master node
-	* @param the address of the slave node in the form of
+	* @param slave address of the slave node in the form of
 	*		<slavehostname>:<portnumber>
+    * @throws RemoteException if the slave node couldn't regesiter with the master
 	*/
 	void registerSlaveNode(BulletinBoard slave) throws RemoteException;
 
