@@ -6,8 +6,8 @@
 
 package Server;
 
-import Compute.Article;
-import Compute.BulletinBoard;
+import Domain.Article;
+import Domain.BulletinBoard;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;

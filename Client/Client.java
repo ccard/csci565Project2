@@ -1,7 +1,7 @@
 package Client;
 
-import Compute.Article;
-import Compute.BulletinBoard;
+import Domain.Article;
+import Domain.BulletinBoard;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -48,7 +48,7 @@ public class Client
 
         // connect to server
         Registry reg = LocateRegistry.getRegistry(host, port);
-        BulletinBoard server = (BulletinBoard) reg.lookup("Compute");
+        BulletinBoard server = (BulletinBoard) reg.lookup("Domain");
 
         final String command = args[0];
         if ("post".equals(command.toLowerCase()))
@@ -75,7 +75,7 @@ public class Client
             Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
             {
                 @Override
-                public Integer apply(Compute.Article article)
+                public Integer apply(Domain.Article article)
                 {
                     return article.id;
                 }

@@ -4,7 +4,7 @@
 * This is the compute interface that is used by the server
 */
 
-package Compute;
+package Domain;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

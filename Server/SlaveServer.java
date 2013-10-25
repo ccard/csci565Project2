@@ -6,8 +6,8 @@
 
 package Server;
 
-import Compute.Article;
-import Compute.BulletinBoard;
+import Domain.Article;
+import Domain.BulletinBoard;
 import org.skife.jdbi.v2.DBI;
 
 import java.rmi.RemoteException;
@@ -46,7 +46,7 @@ public class SlaveServer implements BulletinBoard
      */
 	public void connectToMaster()
 	{
-		String name = "Compute";
+		String name = "Domain";
 
 		String hostport[] = masterName.split(":");
 		try

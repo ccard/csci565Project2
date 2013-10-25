@@ -4,7 +4,7 @@
  */
 package Server;
 
-import Compute.Article;
+import Domain.Article;
 import org.skife.jdbi.v2.StatementContext;
 import org.skife.jdbi.v2.sqlobject.*;
 import org.skife.jdbi.v2.sqlobject.customizers.RegisterMapper;
