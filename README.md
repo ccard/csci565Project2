@@ -8,17 +8,17 @@ CSCI 565 Project 2: Distributed Bulletin Board
 
 - Server/:
 
---*ArticleStore.java*: This is the local database for each server and is also used for some
+ -*ArticleStore.java*: This is the local database for each server and is also used for some
 concurrent access controls
 
---*Server.java*: This starts the specific types of servers either master or slave and binds
+ -*Server.java*: This starts the specific types of servers either master or slave and binds
 them to a port
 
---*MasterServer.java*: This contains the code specific to the *master/cordinator* node that controlls
+ -*MasterServer.java*: This contains the code specific to the *master/cordinator* node that controlls
 the *read/write* quorums to ensure the eventual consistency of the system. The master can be contacted
 directly by the client but the client shouldn't know if they are contacting the master or not.
 
---*SlaveServer.java*
+ -*SlaveServer.java*
 
 - Client/:
 - lib/:
@@ -69,16 +69,16 @@ To run an Client program use:
 
     ./runClient.sh COMMAND [REPLY_ID | OFFSET | ARTICLE_ID] [SERVER HOSTNAME] [SERVER PORT]
 
--***COMMAND***: Either POST, LIST, or GET all ***Case Insensitive***
+ -***COMMAND***: Either POST, LIST, or GET all ***Case Insensitive***
 
--***POST***: Post a new article or reply to post. ***Content is read from STDIN***
+ -***POST***: Post a new article or reply to post. ***Content is read from STDIN***
        REPLY_ID ***MUST*** be present, if not replying to existing post set to 0.
 
--***LIST***: List articles on the server, there is a limit of *10* at a time
+ -***LIST***: List articles on the server, there is a limit of *10* at a time
         OFFSET must be present and used to list *10* articles at a time
         set to *0* to start from begining.
 
--***GET***: Gets a specified article on the server. ARTICLE_ID must be present!
+ -***GET***: Gets a specified article on the server. ARTICLE_ID must be present!
 
 ## Tests
 
