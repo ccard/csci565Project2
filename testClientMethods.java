@@ -50,7 +50,7 @@ public class testClientMethods
     }
 
 
-    public void testPostGetSingleClient()
+    public void testPostAndChoos()
     {
        Random rand = new Random(System.currentTimeMillis());
 
@@ -58,7 +58,22 @@ public class testClientMethods
        {
            case 0:
               int id = client1.postArticle(new Article("This is your friendly tester",0));
+              Article verifypost = client2.chooseArticle(id);
+              assert verifypost.id == id;
+              break;
+           case 1:
+              id = client2.postArticle(new Article("This is your friendly tester",0));
+              verifypost = client3.chooseArticle(id);
+              assert verifypost.id == id;
+              break;
+           case 2:
+              id = client1.postArticle(new Article("This is your friendly tester",0));
+              verifypost = client2.chooseArticle(id);
+              assert verifypost.id == id;
+              break;
        }
+
+       System.out.println("testPostAndChoose: pass");
     }
 
 
@@ -367,11 +382,7 @@ public class testClientMethods
     public static void main(String[] args)
     {
         testClientMethods t = new testClientMethods();
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        t.testPostAndChoos();
         t.stop();
     }
 }

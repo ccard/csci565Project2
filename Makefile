@@ -3,6 +3,9 @@ all: server client test domain
 server:
 		  javac -cp lib/*:. Server/*.java
 
+domain:
+		javac -cp lib/*:. Domain/*.java
+
 client:
 		  javac -cp lib/*:. Client/Client.java
 
