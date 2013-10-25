@@ -71,9 +71,9 @@ public class SlaveServer implements BulletinBoard
      * @param article the article to post
      * @throws RemoteException
      */
-	public void post(Article article) throws RemoteException
+	public int post(Article article) throws RemoteException
 	{
-		master.post(article);
+		return master.post(article);
 	}
 
     /**

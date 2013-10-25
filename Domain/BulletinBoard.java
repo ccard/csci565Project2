@@ -12,7 +12,7 @@ import java.util.*;
 
 public interface BulletinBoard extends Remote {
 	//Defines client rmi methods
-	void post(Article article) throws RemoteException;
+	int post(Article article) throws RemoteException;
 	List<Article> getArticles() throws RemoteException;
 	Article choose(int id) throws RemoteException;
 

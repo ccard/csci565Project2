@@ -68,7 +68,7 @@ public class MasterServer implements BulletinBoard
      *              other slaves
      * @throws RemoteException
      */
-	public void post(Article input) throws RemoteException
+	public int post(Article input) throws RemoteException
     {
         //creates a new article with a unique id
         final int id;
@@ -115,6 +115,8 @@ public class MasterServer implements BulletinBoard
                 throw new RemoteException("write probably didn't happen");
             }
         } catch (InterruptedException ignored) {}
+
+        return id;
     }
 
     /**
