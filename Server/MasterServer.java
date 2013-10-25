@@ -10,6 +10,9 @@ import Compute.Article;
 import Compute.BulletinBoard;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.skife.jdbi.v2.DBI;
 
 import java.rmi.RemoteException;
@@ -21,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 public class MasterServer implements BulletinBoard
 {
+    private static Logger log = LogManager.getLogger();
+
     private final ExecutorService executorService;
     private final List<BulletinBoard> nodes;
     private List<BulletinBoard> slaves;
@@ -48,7 +53,8 @@ public class MasterServer implements BulletinBoard
         articleStore.initializeCountTable();
 
         //Controlls conncurrent bord cast of replications to the quorum
-        executorService = Executors.newCachedThreadPool();
+        executorService = Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder().setNameFormat("master-worker-%s").build());
     }
 
 	//##################################################################
@@ -71,6 +77,7 @@ public class MasterServer implements BulletinBoard
             id = articleStore.generateKey();
         } catch (Exception e)
         {
+            log.error("Couldn't write key", e);
             throw new RuntimeException("Couldn't generate key " + e.getMessage());
         }
         final Article article = input.setId(id);
@@ -89,12 +96,12 @@ public class MasterServer implements BulletinBoard
                     try
                     {
                         node.replicateWrite(article);
+                        log.info("Replicated write!");
 
                         latch.countDown();
                     } catch (RemoteException e)
                     {
-                        // TODO log
-                        e.printStackTrace();
+                        log.error("Write not replicated!", e);
                     }
                 }
             });
@@ -124,7 +131,9 @@ public class MasterServer implements BulletinBoard
         final SortedSet<Article> articles =
                 Collections.synchronizedSortedSet(Sets.<Article>newTreeSet());
 
-        final CountDownLatch latch = new CountDownLatch((slaves.size() + 1) / 2); // read quorum
+        final CountDownLatch latch = new CountDownLatch(
+                (int) Math.ceil((slaves.size() + 1.) / 2.)
+        ); // read quorum
 
         // TODO randomize order to balance reads between slaves
         for (final BulletinBoard node : nodes)
@@ -141,8 +150,7 @@ public class MasterServer implements BulletinBoard
                         latch.countDown();
                     } catch (RemoteException e)
                     {
-                        // TODO log
-                        e.printStackTrace();
+                        log.error("Couldn't get local articles!", e);
                     }
                 }
             });
@@ -153,6 +161,7 @@ public class MasterServer implements BulletinBoard
             boolean succeeded = latch.await(5, TimeUnit.SECONDS);
             if (succeeded)
             {
+                log.info("Listed {} articles", articles.size());
                 return Lists.newArrayList(articles);
             } else
             {
@@ -191,8 +200,7 @@ public class MasterServer implements BulletinBoard
                         latch.countDown();
                     } catch (RemoteException e) // thrown if not found
                     {
-                        // TODO log
-                        e.printStackTrace();
+                        log.error("Couldn't get local article!", e);
                     }
                 }
             });
@@ -219,9 +227,6 @@ public class MasterServer implements BulletinBoard
         {
             throw new RuntimeException(e);
         }
-
-
-        // TODO broadcast get at quorum read level
     }
 
 	//##################################################################
@@ -234,11 +239,13 @@ public class MasterServer implements BulletinBoard
      */
 	public void replicateWrite(Article article)
 	{
+        log.debug("Replicating write...");
         try
         {
             articleStore.insert(article);
         } catch (Exception e)
         {
+            log.error("Couldn't replicate write!", e);
             // XXX some exceptions are unserializable so when RMI tries to pass them to
             // the caller, we get NotSerializableExceptions instead of a proper message.
             // Thus, wrap message in a serializable runtimeException without a cause.

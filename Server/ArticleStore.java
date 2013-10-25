@@ -24,7 +24,7 @@ import java.util.*;
 public interface ArticleStore
 {
     @SqlUpdate("create table if not exists " +
-               "articles (id int primary key, parent int, content    text)")
+               "articles (id int primary key, content text, parent int)")
     void initializeTable();
 
     // other_column is necessary in order to insert stuff into the auto-incremented table.
@@ -37,7 +37,7 @@ public interface ArticleStore
      * Once "promised" by performing an insert, then it'll either get used with an article
      * or if the write fails, it will never be used, ever.
      */
-    @SqlUpdate("insert into last_promised_key values(DEFAULT)")
+    @SqlUpdate("insert into last_promised_key (other_column) values (DEFAULT)")
     @GetGeneratedKeys
     int generateKey();
 
@@ -56,7 +56,8 @@ public interface ArticleStore
         public Article map(int i, ResultSet resultSet, StatementContext statementContext)
         throws SQLException
         {
-            return new Article(resultSet.getString("content"), resultSet.getInt("parent"));
+            return new Article(resultSet.getString("content"), resultSet.getInt("parent"))
+                    .setId(resultSet.getInt("id"));
         }
     }
 }
