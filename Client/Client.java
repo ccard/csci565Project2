@@ -48,7 +48,7 @@ public class Client
 
         // connect to server
         Registry reg = LocateRegistry.getRegistry(host, port);
-        BulletinBoard server = (BulletinBoard) reg.lookup("Domain");
+        BulletinBoard server = (BulletinBoard) reg.lookup("BulletinBoard");
 
         final String command = args[0];
         if ("post".equals(command.toLowerCase()))
@@ -68,7 +68,7 @@ public class Client
         }
         else if ("list".equals(command.toLowerCase()))
         {
-            int offset = Integer.parseInt(args[1]);
+            //int offset = Integer.parseInt(args[1]);
 
             List<Article> articles = server.getArticles(); // TODO offset and limit to 10
 

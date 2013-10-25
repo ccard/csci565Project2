@@ -7,179 +7,62 @@
 package Server;
 
 import Domain.Article;
-import Domain.BulletinBoard;
-import org.skife.jdbi.v2.DBI;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
 
-public class SlaveServer implements BulletinBoard
+/**
+ * Slave node implementation. All BulletinBoard operations are proxied to the master.
+ *
+ * {@link #connectToMaster()} MUST be called in order to register this slave into a cluster.
+ */
+public class SlaveServer extends Node
 {
-    private final ArticleStore articleStore;
-
-	public final String serverName,masterName;
-	private BulletinBoard master;
-
+    private static Logger log = LogManager.getLogger();
+	public final String masterName, identifier;
+	private Master master;
 
     /**
-	* @param masterName true if it is the master node false if it a slave node
-     *                  will be a string in the form of <masterhostname>:<mastersocket>
-	* @param serverName the location of the master node if it is a slave node this will be
-	* 		 a string in the form of <masterhostname>:<masterportnumber>
+	* @param masterName string of the form of <masterhostname>:<mastersocket>
+	* @param databaseName local database name to use.
 	*/
-	public SlaveServer(String masterName, String serverName)
-	{
-        // connect to embedded article database
-        DBI dbi = new DBI("jdbc:h2:dbs/" + serverName.replace(':', '_'));
-        articleStore = dbi.onDemand(ArticleStore.class);
-        articleStore.initializeTable();
+	public SlaveServer(String masterName, String databaseName)
+    {
+        super(databaseName.replace(':', '_'));
 
-		this.serverName = serverName;
-		this.masterName = masterName;
-		connectToMaster();
-	}
+        identifier = databaseName;
+        this.masterName = masterName;
+    }
 
     /**
-     * This method connects to the active master server so that a quorum can be formed
+     * Connects to the active master server so that a quorum can be formed
      */
-	public void connectToMaster()
+	public void connectToMaster() throws Throwable
 	{
-		String name = "Domain";
-
 		String hostport[] = masterName.split(":");
-		try
-		{
-			int port  = Integer.parseInt(hostport[1]);
-			Registry reg = LocateRegistry.getRegistry(hostport[0],port);
-			master = (BulletinBoard) reg.lookup(name);
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-			System.exit(2);
-		}
+        int port  = Integer.parseInt(hostport[1]);
+        Registry reg = LocateRegistry.getRegistry(hostport[0],port);
+        master = (Master) reg.lookup("BulletinBoard");
+        master.registerSlaveNode(this, identifier);
+        log.info("Registered with master at {}", masterName);
 	}
 
-	//##################################################################
-	// Client RPC Methods
-	//##################################################################
-
-    /**
-     * This informs the master of the article to be posted
-     * @param article the article to post
-     * @throws RemoteException
-     */
 	public int post(Article article) throws RemoteException
 	{
 		return master.post(article);
 	}
 
-    /**
-     * This method gets all articles from the masters read quorum
-     * @return
-     * @throws RemoteException
-     */
 	public List<Article> getArticles() throws RemoteException
     {
 		return master.getArticles();
 	}
 
-    /**
-     * Asks the masters read quorum for the article with the specified id
-     * @param id of the desired article
-     * @return the desired article
-     * @throws RemoteException  if the article is not found
-     */
 	public Article choose(int id) throws RemoteException
     {
         return master.choose(id);
-    }
-
-	//##################################################################
-	// Server RPC Methods
-	//##################################################################
-
-    /**
-     * This method writes the article to the article store when called
-     * @param article to store
-     */
-	public void replicateWrite(Article article)
-	{
-        try
-        {
-            articleStore.insert(article);
-        } catch (Exception e)
-        {
-            // XXX some exceptions are unserializable so when RMI tries to pass them to
-            // the caller, we get NotSerializableExceptions instead of a proper message.
-            // Thus, wrap message in a serializable runtimeException without a cause.
-            throw new RuntimeException("Couldn't replicate write: " + e.getMessage());
-        }
-	}
-
-	/**
-	* This method registers a slave node with the master node
-	* @param slave slave bulletinBoard to register.
-	*/
-	public void registerSlaveNode(BulletinBoard slave) throws RemoteException
-	{
-			try
-			{
-				master.registerSlaveNode(this);
-			}
-			catch (Exception e)
-			{
-				e.printStackTrace();
-				System.exit(2);
-			}
-	}
-
-    /**
-     * This method gets this servers article with the specified id
-     * @param id the id of the desired article
-     * @return the desired article
-     * @throws RemoteException  if the article is not found
-     */
-    @Override
-    public Article getLocalArticle(int id) throws RemoteException
-    {
-        Article article = null;
-        try
-        {
-            article = articleStore.get(id);
-        } catch (Exception e)
-        {
-            // XXX some exceptions are unserializable so when RMI tries to pass them to
-            // the caller, we get NotSerializableExceptions instead of a proper message.
-            // Thus, wrap message in a serializable runtimeException without a cause.
-            throw new RuntimeException("Couldn't read article: " + e.getMessage());
-        }
-        if (null == article)
-        {
-            throw new RemoteException("404 not found");
-        }
-        return article;
-    }
-
-    /**
-     * returns the servers local list of articles
-     * @return the list of local articles
-     * @throws RemoteException if there are no articles
-     */
-    @Override
-    public List<Article> getLocalArticles() throws RemoteException
-    {
-        try
-        {
-            return articleStore.getAll();
-        } catch (Exception e)
-        {
-            // XXX some exceptions are unserializable so when RMI tries to pass them to
-            // the caller, we get NotSerializableExceptions instead of a proper message.
-            // Thus, wrap message in a serializable runtimeException without a cause.
-            throw new RuntimeException("Couldn't read articles: " + e.getMessage());
-        }
     }
 }
