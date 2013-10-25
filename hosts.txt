@@ -1,3 +1,4 @@
 master::bb136-19.mines.edu::5555
 slave::bb136-11.mines.edu::5556
 slave::bb136-11.mines.edu::5557
+EOF
