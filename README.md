@@ -7,6 +7,19 @@ CSCI 565 Project 2: Distributed Bulletin Board
 ## Files:
 
 - Server/:
+
+--*ArticleStore.java*: This is the local database for each server and is also used for some
+concurrent access controls
+
+--*Server.java*: This starts the specific types of servers either master or slave and binds
+them to a port
+
+--*MasterServer.java*: This contains the code specific to the *master/cordinator* node that controlls
+the *read/write* quorums to ensure the eventual consistency of the system. The master can be contacted
+directly by the client but the client shouldn't know if they are contacting the master or not.
+
+--*SlaveServer.java*
+
 - Client/:
 - lib/:
 - Domain/:
