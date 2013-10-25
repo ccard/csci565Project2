@@ -13,18 +13,23 @@ if [ $# = 1 ]; then
  			path=`pwd`
  			if [ $type = 'master' ]; then
  				master="$host:$port"
-    			ssh $host "cd $path; ./runServer.sh -s $port -master &" &
-				echo starting master
+				echo starting master on $master
+                0</dev/null ssh $host "cd $path; ./runServer.sh -s $port -master" &
+                echo "master started, pid: $!"
 				sleep 2s
  			else
- 				echo starting slave 
-				ssh $host "cd $path; ./runServer.sh -s $port -slave -mhost $master &" &
+ 				echo starting slave on $host $port
+                0</dev/null ssh $host "cd $path; ./runServer.sh -s $port -slave -mhost $master" &
+                echo "slave started, pid: $!"
  			fi
+
+            echo "fall off"
 		done <hosts.txt
 	else
 		while read x; do
  			host=`echo $x | cut --delimiter=':' -f 3 -`
-    		echo `ssh $host "pkill java"`
+            echo "killing java on host $host"
+    		0</dev/null ssh $host "pkill java"
 		done <hosts.txt
 	fi
 else
