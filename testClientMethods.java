@@ -112,6 +112,16 @@ public class testClientMethods
         System.out.println("testListArticles: Passed");
     }
 
+    public void postMuliClients()
+    {
+        final Article a1,a2,a3;
+        a1 = new Article("This is a post from client 1",0);
+        a2 = new Article("This is a post from client 2",0);
+        a3 = new Article("This is a post from client 3",0);
+
+        
+    }
+
     private class  Client
     {
         private ArrayList<BulletinBoard> servers;
