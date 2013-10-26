@@ -49,7 +49,9 @@ public class testClientMethods
         stopServers(serverstext);
     }
 
-
+    /**
+    * This method tests posting an artilce and choose a 1 of 3 clients to do it
+    */
     public void testPostAndChoos()
     {
        Random rand = new Random(System.currentTimeMillis());
@@ -76,7 +78,39 @@ public class testClientMethods
        System.out.println("testPostAndChoose: pass");
     }
 
+    /**
+    * This Method tests listing all articles in the system
+    */
+    public void testListArticles()
+    {
+        Random rand = new Random(System.currentTimeMillis());
+        List<Article> articles;
+        switch(rand.nextInt(3))
+        {
+            case 0:
+                articles = client1.getArticles();
+                assert articles != null;
+                assert articles.size() > 0;
+                break;
+            case 1:
+                articles = client2.getArticles();
+                assert articles != null;
+                assert articles.size() > 0;
+                break;
+            case 3:
+                articles = client3.getArticles();
+                assert articles != null;
+                assert articles.size() > 0;
+                break;
+        }
 
+        for(Article a : articles)
+        {
+            System.out.println(a.content);
+        }
+
+        System.out.println("testListArticles: Passed");
+    }
 
     private class  Client
     {
