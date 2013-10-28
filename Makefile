@@ -9,8 +9,6 @@ domain:
 client:
 		  javac -cp lib/*:. Client/Client.java
 
-run:
-		  javac runServer.java startServers.java
 
 test:
 		javac -cp lib/*:. testClientMethods.java

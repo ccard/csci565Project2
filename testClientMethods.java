@@ -12,8 +12,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+//import org.apache.logging.log4j.LogManager;
+//import org.apache.logging.log4j.Logger;
 
 /**
  * @Author Chris card, Steven Rupert
@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 
 public class testClientMethods
 {
-   private static Logger log = LogManager.getLogger();
+  // private static Logger log = LogManager.getLogger();
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
 
