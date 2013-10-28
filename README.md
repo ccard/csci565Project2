@@ -86,7 +86,7 @@ TODO
 
 To run a single server:
 
-    ./runServer.sh -s <socket> [-master | -slave -mhost <master hostnem>:<master socket>]
+    ./runServer.sh -s <socket> [-master | -slave -mhost <master hostname>:<master socket>]
 
 To start a cluster of servers:
 
