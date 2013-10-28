@@ -340,7 +340,7 @@ public class testClientMethods
     {
         try
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"./runServer.sh "+args);
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
             run.redirectErrorStream(true);
             Process p = run.start();
             BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
