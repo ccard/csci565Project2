@@ -84,7 +84,7 @@ public class testClientMethods
     public void testListArticles()
     {
         Random rand = new Random(System.currentTimeMillis());
-        List<Article> articles;
+        List<Article> articles = new ArrayList<Article>();
         switch(rand.nextInt(3))
         {
             case 0:
