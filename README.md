@@ -90,7 +90,7 @@ To run a single server:
 
 To start a cluster of servers:
 
-    java startServers [-start | -stop]
+    ./startServers.sh [-start | -stop]
 
 **Note**: this command reads the file called `hosts.txt` which has
 lines in the following format:
@@ -130,7 +130,7 @@ To run an Client program use:
 
     java testClientMethods
 
-This will print out success if the tests pass other wise it will through an error
+This will print out success if the tests pass other wise it will throw an error
 
 -To run the bench mark:
 

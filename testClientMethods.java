@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 //import org.apache.logging.log4j.LogManager;
 //import org.apache.logging.log4j.Logger;
 
@@ -28,6 +29,7 @@ public class testClientMethods
   // private static Logger log = LogManager.getLogger();
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
+   public static AtomicBoolean flag = new AtomicBoolean(false);
 
    public testClientMethods()
    {
@@ -47,16 +49,16 @@ public class testClientMethods
         startServers(serverstext);
    }
 
-    public void stop()
-    {
+   public void stop()
+   {
         stopServers(serverstext);
     }
 
-    /**
-    * This method tests posting an artilce and choose a 1 of 3 clients to do it
-    */
-    public void testPostAndChoos() throws AssertionError
-    {
+   /**
+   * This method tests posting an artilce and choose a 1 of 3 clients to do it
+   */
+   public void testPostAndChoose() throws AssertionError
+   {
        Random rand = new Random(System.currentTimeMillis());
 
        switch (rand.nextInt(3))
@@ -81,11 +83,11 @@ public class testClientMethods
        System.out.println("testPostAndChoose: pass");
     }
 
-    /**
-    * This Method tests listing all articles in the system
-    */
-    public void testListArticles() throws AssertionError
-    {
+   /**
+   * This Method tests listing all articles in the system
+   */
+   public void testListArticles() throws AssertionError
+   {
         Random rand = new Random(System.currentTimeMillis());
         List<Article> articles = new ArrayList<Article>();
         switch(rand.nextInt(3))
@@ -115,18 +117,84 @@ public class testClientMethods
         System.out.println("testListArticles: Passed");
     }
 
-    public void postMuliClients()
-    {
-        final Article a1,a2,a3;
-        a1 = new Article("This is a post from client 1",0);
-        a2 = new Article("This is a post from client 2",0);
-        a3 = new Article("This is a post from client 3",0);
+   public void testPostMuliClients()throws AssertionError
+   {
+       flag.set(false);
+       final Article a1,a2,a3;
+       a1 = new Article("This is a post from client 1",0);
+       a2 = new Article("This is a post from client 2",0);
+       a3 = new Article("This is a post from client 3",0);
+       final CountDownLatch count = new CountDownLatch(3);
+       Thread t1 = new Thread(new Runnable(){
 
-        
-    }
+           @Override
+           public void run()
+           {
+               try
+               {
+                   while(!flag.get()){}
+                   client1.postArticle(a1);
+                   count.countDown();
+               }
+               catch (Exception e)
+               {
+                   e.printStackTrace();
+               }
+           }
+       });
 
-    private class  Client
-    {
+       Thread t2 = new Thread(new Runnable(){
+
+           @Override
+           public void run()
+           {
+               try
+               {
+                   while(!flag.get()){}
+                   client2.postArticle(a2);
+                   count.countDown();
+               }
+               catch (Exception e)
+               {
+                   e.printStackTrace();
+               }
+           }
+       });
+
+       Thread t3 = new Thread(new Runnable(){
+
+           @Override
+           public void run()
+           {
+               try
+               {
+                   while(!flag.get()){}
+                   client3.postArticle(a1);
+                   count.countDown();
+               }
+               catch (Exception e)
+               {
+                   e.printStackTrace();
+               }
+           }
+       });
+
+       t1.start();
+       t2.start();
+       t3.start();
+       flag.set(true);
+
+       try {
+           boolean passed = count.await(3,TimeUnit.SECONDS);
+           assert passed;
+           System.out.println("testPostMultiCllients: Passed");
+       } catch (InterruptedException e) {
+           throw new AssertionError("Threads where interupted");
+       }
+   }
+
+   private class  Client
+   {
         private ArrayList<BulletinBoard> servers;
         private ExecutorService executorService;
         /**
@@ -306,12 +374,12 @@ public class testClientMethods
     }
 
 
-    /**
-     * Gets the path to the current directory
-     * @return the path of the current directory
-     */
-    public static String getPath()
-    {
+   /**
+    * Gets the path to the current directory
+    * @return the path of the current directory
+    */
+   public static String getPath()
+   {
         String line = "",line2="";
 
         try{
@@ -330,14 +398,14 @@ public class testClientMethods
         return line2;
     }
 
-    /**
-     * This method starts a server either on a romote machine or the current machine
-     * @param path the path to the base directory of the runServer file
-     * @param host hostname of the computer to start the server
-     * @param args the arguments to be passed to the server on the cmd line
-     */
-    public static void startServer(String path, String host, String args)
-    {
+   /**
+    * This method starts a server either on a romote machine or the current machine
+    * @param path the path to the base directory of the runServer file
+    * @param host hostname of the computer to start the server
+    * @param args the arguments to be passed to the server on the cmd line
+    */
+   public static void startServer(String path, String host, String args)
+   {
         try
         {
             ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
@@ -358,13 +426,13 @@ public class testClientMethods
         }
     }
 
-    /**
-     * This Method starts servers based on a host file that defines where to start the server
-     * and the socket to start it on and whether or not it is a master or slave
-     * @param file the name of the host file
-     */
-    public static void startServers(ArrayList<String> file)
-    {
+   /**
+    * This Method starts servers based on a host file that defines where to start the server
+    * and the socket to start it on and whether or not it is a master or slave
+    * @param file the name of the host file
+    */
+   public static void startServers(ArrayList<String> file)
+   {
         String master = "";
         final String path = getPath();
 
@@ -391,12 +459,12 @@ public class testClientMethods
         }
     }
 
-    /**
-     * This stops the servers in the hosts file
-     * @param file the host file
-     */
-    public static void stopServers(ArrayList<String> file)
-    {
+   /**
+    * This stops the servers in the hosts file
+    * @param file the host file
+    */
+   public static void stopServers(ArrayList<String> file)
+   {
 
         for (String host : file)
         {
@@ -420,24 +488,25 @@ public class testClientMethods
         }
     }
 
-    public static void main(String[] args)
-    {
-        testClientMethods t = new testClientMethods();
-        try
-        {
-            t.testPostAndChoos();
-				t.testListArticles();
-        }
-        catch (Exception e)
-        {
-            System.err.println("Tests failed");
-            e.printStackTrace();
-        }
-        finally
-        {
-            t.stop();
+   public static void main(String[] args)
+   {
+       testClientMethods t = new testClientMethods();
+       try
+       {
+           t.testPostAndChoose();
+		   t.testListArticles();
+           t.testPostMuliClients();
+       }
+       catch (Exception e)
+       {
+           System.err.println("Tests failed");
+           e.printStackTrace();
+       }
+       finally
+       {
+           t.stop();
 
-        }
-    }
+       }
+   }
 }
 
