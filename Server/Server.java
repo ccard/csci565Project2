@@ -118,7 +118,7 @@ public class Server
         int port  = socket(args);
         boolean master = isMaster(args);
         String host = getHost();
-
+        //TODO: Allow user to choose sequential or quorum concistency
         BulletinBoard engine =
                 (master ? new MasterServer(host + "_" + port)
                         : new SlaveServer(getMasterName(args), host + ":" + port));
