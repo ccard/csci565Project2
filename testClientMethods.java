@@ -340,7 +340,7 @@ public class testClientMethods
     {
         try
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path+"; ./runServer.sh "+args);
             run.redirectErrorStream(true);
             Process p = run.start();
             BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -386,7 +386,7 @@ public class testClientMethods
             }
             else if (master.isEmpty())
             {
-                System.err.println("Host file incorrect formate master should be the first value");
+                System.err.println("Host file incorrect format master should be the first value");
                 System.exit(2);
             }
 
