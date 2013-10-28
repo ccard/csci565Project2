@@ -126,11 +126,14 @@ To run an Client program use:
 
 ## Tests
 
--To run the tests:
+### Build
+    make
+### Run Tests
 
     java testClientMethods
 
 This will print out success if the tests pass other wise it will throw an error
 
+### Benchmark
 -To run the bench mark:
 
