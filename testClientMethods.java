@@ -12,6 +12,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @Author Chris card, Steven Rupert
@@ -23,8 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 public class testClientMethods
 {
-   ArrayList<String> serverstext;
-   Client client1,client2,client3;
+   private static Logger log = LogManager.getLogger();
+   private ArrayList<String> serverstext;
+   private Client client1,client2,client3;
 
    public testClientMethods()
    {
@@ -344,7 +347,7 @@ public class testClientMethods
             String line = "";
             while ((line = b.readLine()) != null)
             {
-                if (line.compareTo("EOF") == 0) break;
+                if (line.contains("EOF")) break;
                 System.out.println(line);
             }
         }
@@ -363,17 +366,23 @@ public class testClientMethods
     public static void startServers(ArrayList<String> file)
     {
         String master = "";
-        String path = getPath();
+        final String path = getPath();
 
         for (String line : file)
         {
-            String params[] = line.split("::");
+            final String params[] = line.split("::");
 
 
             if (master.isEmpty() && params[0].compareTo("master") == 0)
             {
                 master = params[1]+":"+params[2];
-                startServer(path,params[1],"-s "+params[2]+" -master");
+                //Thread t = new Thread(){
+                   // public void run()
+                  //  {
+                        startServer(path,params[1],"-s "+params[2]+" -master");
+                 //   }
+                //}
+                //}
             }
             else if (master.isEmpty())
             {
