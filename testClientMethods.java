@@ -400,7 +400,8 @@ public class testClientMethods
 
         for (String host : file)
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
+            String param[] = host.split("::");
+            ProcessBuilder run = new ProcessBuilder("ssh",param[1],"pkill java");
 
             run.redirectErrorStream(true);
             try {
