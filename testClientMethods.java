@@ -376,13 +376,7 @@ public class testClientMethods
             if (master.isEmpty() && params[0].compareTo("master") == 0)
             {
                 master = params[1]+":"+params[2];
-                //Thread t = new Thread(){
-                   // public void run()
-                  //  {
-                        startServer(path,params[1],"-s "+params[2]+" -master");
-                 //   }
-                //}
-                //}
+                startServer(path,params[1],"-s "+params[2]+" -master");
             }
             else if (master.isEmpty())
             {
@@ -403,15 +397,8 @@ public class testClientMethods
      */
     public static void stopServers(ArrayList<String> file)
     {
-        Set<String> hostnames = new HashSet<String>();
 
-        for (String line : file)
-        {
-            String params[] = line.split("::");
-            hostnames.add(params[1]);
-        }
-
-        for (String host : hostnames)
+        for (String host : file)
         {
             ProcessBuilder run = new ProcessBuilder("ssh",host,"pkill java");
 
