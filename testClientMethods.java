@@ -55,7 +55,7 @@ public class testClientMethods
     /**
     * This method tests posting an artilce and choose a 1 of 3 clients to do it
     */
-    public void testPostAndChoos()
+    public void testPostAndChoos() throws AssertionError
     {
        Random rand = new Random(System.currentTimeMillis());
 
@@ -84,7 +84,7 @@ public class testClientMethods
     /**
     * This Method tests listing all articles in the system
     */
-    public void testListArticles()
+    public void testListArticles() throws AssertionError
     {
         Random rand = new Random(System.currentTimeMillis());
         List<Article> articles = new ArrayList<Article>();
@@ -423,8 +423,20 @@ public class testClientMethods
     public static void main(String[] args)
     {
         testClientMethods t = new testClientMethods();
-        t.testPostAndChoos();
-        t.stop();
+        try
+        {
+            t.testPostAndChoos();
+        }
+        catch (Exception e)
+        {
+            System.err.println("Tests failed");
+            e.printStackTrace();
+        }
+        finally
+        {
+            t.stop();
+
+        }
     }
 }
 
