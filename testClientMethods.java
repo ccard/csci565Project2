@@ -426,6 +426,7 @@ public class testClientMethods
         try
         {
             t.testPostAndChoos();
+				t.testListArticles();
         }
         catch (Exception e)
         {
