@@ -44,8 +44,8 @@ public interface ArticleStore
     @SqlUpdate("insert into articles (id, content, parent) values (:id, :content, :parent)")
     void insert(@BindBean Article article);
 
-    @SqlQuery("select * from articles")
-    List<Article> getAll();
+    @SqlQuery("select * from articles where id > :offset order by id desc limit 10")
+    List<Article> getArticles(@Bind("offset") int offset);
 
     @SqlQuery("select * from articles where id = :id")
     Article get(@Bind("id") int id);

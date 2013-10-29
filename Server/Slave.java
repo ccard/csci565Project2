@@ -17,5 +17,5 @@ public interface Slave extends BulletinBoard, Remote
 
     Article getLocalArticle(int id) throws RemoteException;
 
-    List<Article> getLocalArticles() throws RemoteException;
+    List<Article> getLocalArticles(int offset) throws RemoteException;
 }

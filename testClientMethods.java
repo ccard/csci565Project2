@@ -1,5 +1,6 @@
 import Domain.Article;
 import Domain.BulletinBoard;
+import Domain.ConsistencyLevel;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -303,7 +304,7 @@ public class testClientMethods
 
             try
             {
-                return servers.get(choice).post(a);
+                return servers.get(choice).post(a, ConsistencyLevel.QUORUM);
             }
             catch (RemoteException e)
             {
@@ -328,7 +329,7 @@ public class testClientMethods
             Article ret = null;
             try
             {
-                ret = servers.get(choice).choose(i);
+                ret = servers.get(choice).choose(i, ConsistencyLevel.QUORUM);
             }
             catch (Exception e)
             {
@@ -354,7 +355,7 @@ public class testClientMethods
 
             try
             {
-               ret = servers.get(choice).getArticles();
+               ret = servers.get(choice).getArticles(0, ConsistencyLevel.QUORUM);
             }
             catch (Exception e)
             {
@@ -390,7 +391,7 @@ public class testClientMethods
                     {
                         try
                         {
-                            node.post(articles[i]);
+                            node.post(articles[i], ConsistencyLevel.QUORUM);
                             latch.countDown();
                         } catch (RemoteException e)
                         {

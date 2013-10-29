@@ -158,8 +158,8 @@ public class Client
         }
         else if ("list".equals(jCommander.getParsedCommand()))
         {
-            List<Article> articles = server.getArticles(listCommand.consistency);
-            // TODO offset and limit to 10
+            List<Article> articles = server.getArticles(listCommand.offset,
+                                                        listCommand.consistency);
 
             Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
             {

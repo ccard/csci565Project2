@@ -57,9 +57,9 @@ public class SlaveServer extends Node
 		return master.post(article, level);
 	}
 
-	public List<Article> getArticles(ConsistencyLevel level) throws RemoteException
+	public List<Article> getArticles(int offset, ConsistencyLevel level) throws RemoteException
     {
-		return master.getArticles(level);
+		return master.getArticles(offset, level);
 	}
 
 	public Article choose(int id, ConsistencyLevel level) throws RemoteException

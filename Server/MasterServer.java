@@ -81,7 +81,7 @@ public class MasterServer extends Node implements Master
         return id;
     }
 
-	public List<Article> getArticles(ConsistencyLevel level) throws RemoteException
+	public List<Article> getArticles(final int offset, ConsistencyLevel level) throws RemoteException
     {
         // strategy: collect all returned articles from the nodes into a set,
         // nodes will return all articles they know about, so we'll get the union
@@ -100,7 +100,7 @@ public class MasterServer extends Node implements Master
             @Override
             public void run(Slave node) throws Exception
             {
-                articles.addAll(node.getLocalArticles());
+                articles.addAll(node.getLocalArticles(offset));
             }
         });
 
