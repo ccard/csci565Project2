@@ -141,7 +141,9 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client1.postArticle(a1);
+                   int id = client1.postArticle(a1);
+                   Article temp = client1.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
                }
                catch (Exception e)
@@ -159,7 +161,9 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client2.postArticle(a2);
+                   int id = client2.postArticle(a2);
+                   Article temp = client2.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
                }
                catch (Exception e)
@@ -177,7 +181,9 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client3.postArticle(a1);
+                   int id = client3.postArticle(a3);
+                   Article temp = client3.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
                }
                catch (Exception e)
@@ -201,32 +207,7 @@ public class testClientMethods
        }
    }
 
-    /**
-     * This tests if the servers choose method works
-     * @throws AssertionError if the test fails
-     */
-    public void testChooseArticle()throws AssertionError
-    {
-        Random rand = new Random(System.currentTimeMillis());
-        int id = 2;
-        switch (rand.nextInt(3))
-        {
-            case 0:
-                Article a = client1.chooseArticle(id);
-                assert id == a.id;
-                break;
-            case 1:
-                a = client2.chooseArticle(id);
-                assert id == a.id;
-                break;
-            case 2:
-                a = client3.chooseArticle(id);
-                assert id == a.id;
-                break;
-        }
 
-        System.out.println("testChoosArticle: Pass");
-    }
 
     /**
     * This provides the client interface for testing posting,listing and
@@ -535,7 +516,6 @@ public class testClientMethods
            t.testPostAndChoose();
 		   t.testListArticles();
            t.testPostMuliClients();
-           t.testChooseArticle();
        }
        catch (Exception e)
        {
