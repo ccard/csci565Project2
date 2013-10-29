@@ -52,10 +52,12 @@ public class testClientMethods
    public void stop()
    {
         stopServers(serverstext);
-    }
+   }
 
    /**
-   * This method tests posting an artilce and choose a 1 of 3 clients to do it
+   * This method tests posting an artilce and choose at random
+   * 1 of 3 clients to do it
+   * @throws AssertionError when the test fails
    */
    public void testPostAndChoose() throws AssertionError
    {
@@ -84,7 +86,9 @@ public class testClientMethods
     }
 
    /**
-   * This Method tests listing all articles in the system
+   * This Method tests listing all articles in the system by choosing 1 of
+   * 3 clients to do it at random
+   * @throws AssertionError if the test fails
    */
    public void testListArticles() throws AssertionError
    {
@@ -117,6 +121,10 @@ public class testClientMethods
         System.out.println("testListArticles: Passed");
     }
 
+    /**
+    * This method tests multiple clients posting near simultaneously
+    * @throws AssertionError if the test fails
+    */
    public void testPostMuliClients()throws AssertionError
    {
        flag.set(false);
@@ -193,6 +201,37 @@ public class testClientMethods
        }
    }
 
+    /**
+     * This tests if the servers choose method works
+     * @throws AssertionError if the test fails
+     */
+    public void testChooseArticle()throws AssertionError
+    {
+        Random rand = new Random(System.currentTimeMillis());
+        int id = 2;
+        switch (rand.nextInt(3))
+        {
+            case 0:
+                Article a = client1.chooseArticle(id);
+                assert id == a.id;
+                break;
+            case 1:
+                Article a = client2.chooseArticle(id);
+                assert id == a.id;
+                break;
+            case 2:
+                Article a = client3.chooseArticle(id);
+                assert id == a.id;
+                break;
+        }
+
+        System.out.println("testChoosArticle: Pass");
+    }
+
+    /**
+    * This provides the client interface for testing posting,listing and
+    * Choosing articles
+    */
    private class  Client
    {
         private ArrayList<BulletinBoard> servers;
@@ -371,7 +410,7 @@ public class testClientMethods
                 }
             } catch (InterruptedException ignored) {}
         }
-    }
+   }
 
 
    /**
@@ -496,6 +535,7 @@ public class testClientMethods
            t.testPostAndChoose();
 		   t.testListArticles();
            t.testPostMuliClients();
+           t.testChooseArticle();
        }
        catch (Exception e)
        {
@@ -505,7 +545,6 @@ public class testClientMethods
        finally
        {
            t.stop();
-
        }
    }
 }
