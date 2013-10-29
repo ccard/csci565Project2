@@ -2,6 +2,10 @@ package Client;
 
 import Domain.Article;
 import Domain.BulletinBoard;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+import com.beust.jcommander.Parameters;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -19,39 +23,74 @@ import java.util.*;
  */
 public class Client
 {
+    @Parameter(names = "-host",
+               description = "Hostname of BulletinBoard server to which to connect.",
+               required = true)
+    private String host;
 
-    public static final String USAGE =
-            "Usage: COMMAND [REPLY_ID|OFFSET|ARTICLE_ID] [SERVER HOST] [SERVER PORT]\n" +
-            "  COMMAND: Either POST, LIST, or GET, case insensitive\n" +
-            "      POST: post a new article. Content is read from STDIN.\n" +
-            "            REPLY_ID _must_ be present, and equal to 0 if not replying\n" +
-            "            to an existing post.\n" +
-            "      LIST: list articles on the server, up to 10 at a time.\n" +
-            "            OFFSET must be present. Use\n" +
-            "            0 to read articles from the beginning.\n" +
-            "      GET: get a specific article on the server. ARTICLE_ID must\n" +
-            "           be present.";
+    @Parameter(names = "-port",
+               description = "Port of BulletinBoard server to which to connect.",
+               required = true)
+    private int port;
+
+    @Parameters(commandDescription = "Post a new article or reply to an existing article. " +
+                                     "Article content is read from STDIN.")
+    private static class PostCommand
+    {
+        @Parameter(names = {"-reply"},
+                description = "If replying to an existing article, the ID of that article.")
+        private int replyId = 0;
+    }
+
+    @Parameters(commandDescription = "List the 10 latest articles on the server.")
+    private static class ListCommand
+    {
+        @Parameter(names = {"-offset"},
+                description = "ID from which to start listing articles. At most 10 articles" +
+                              " are listed from this offset.")
+        private int offset = 0;
+    }
+
+    @Parameters(commandDescription = "Get a specific article from the server.")
+    private static class GetCommand
+    {
+        @Parameter(names = {"-id"},
+                   description = "ID of the article to get.",
+                   required = true)
+        private int id;
+    }
 
     /**
      * Sends a command to a random server in the cluster and writes the response to STDOUT.
      */
     public static void main(String args[]) throws Throwable
     {
-        if (args.length != 4)
+        Client client = new Client();
+        JCommander jCommander = new JCommander(client);
+        jCommander.setProgramName("client.sh");
+        PostCommand postCommand = new PostCommand();
+        jCommander.addCommand("post", postCommand);
+        ListCommand listCommand = new ListCommand();
+        jCommander.addCommand("list", listCommand);
+        GetCommand getCommand = new GetCommand();
+        jCommander.addCommand("get", getCommand);
+
+        try
         {
-            System.err.println(USAGE);
+            jCommander.parse(args);
+        } catch (ParameterException e)
+        {
+            System.err.println(e.getMessage() + "\n");
+            jCommander.usage();
             System.exit(255);
         }
 
-        final String host = args[2];
-        final int port = Integer.parseInt(args[3]);
-
         // connect to server
-        Registry reg = LocateRegistry.getRegistry(host, port);
+        Registry reg = LocateRegistry.getRegistry(client.host, client.port);
         BulletinBoard server = (BulletinBoard) reg.lookup("BulletinBoard");
 
         final String command = args[0];
-        if ("post".equals(command.toLowerCase()))
+        if ("post".equals(jCommander.getParsedCommand()))
         {
             int parent = Integer.parseInt(args[1]);
 
@@ -66,10 +105,8 @@ public class Client
 
             System.err.println("Article posted.");
         }
-        else if ("list".equals(command.toLowerCase()))
+        else if ("list".equals(jCommander.getParsedCommand()))
         {
-            //int offset = Integer.parseInt(args[1]);
-
             List<Article> articles = server.getArticles(); // TODO offset and limit to 10
 
             Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
@@ -121,14 +158,14 @@ public class Client
                 }
             }
         }
-        else if ("get".equals(command.toLowerCase()))
+        else if ("get".equals(jCommander.getParsedCommand()))
         {
             Article article = server.choose(Integer.parseInt(args[1]));
             System.out.println(String.format("Article %s\n%s", article.id, article.content));
         }
         else
         {
-            System.err.println(USAGE);
+            jCommander.usage();
             System.exit(255);
         }
     }
