@@ -68,7 +68,7 @@ public class MasterServer extends Node implements Master
             {
                 node.replicateWrite(article);
             }
-        });
+        },"<POST>");
 
         log.info("Posted article {}", id);
 
@@ -91,7 +91,7 @@ public class MasterServer extends Node implements Master
             {
                 articles.addAll(node.getLocalArticles());
             }
-        });
+        },"<LIST>");
 
         log.info("Listed {} articles.", articles.size());
         return Lists.newArrayList(articles);
@@ -110,7 +110,7 @@ public class MasterServer extends Node implements Master
             {
                 article[0] = node.getLocalArticle(id);
             }
-        });
+        },"<CHOOSE>");
 
         if (article[0] == null)
         {
@@ -130,7 +130,7 @@ public class MasterServer extends Node implements Master
         log.info("Slave {} registered. Cluster now contains {} nodes.", identifier, nodes.size());
     }
 
-    private void runOnNodes(int minSuccesses, final Task task) throws RemoteException
+    private void runOnNodes(int minSuccesses, final Task task,String method) throws RemoteException
     {
         long start = System.nanoTime();
         final CountDownLatch latch = new CountDownLatch(minSuccesses);
@@ -157,7 +157,7 @@ public class MasterServer extends Node implements Master
             boolean succeeded = latch.await(5, TimeUnit.SECONDS);
             if (succeeded)
             {
-                log.info("Cluster task took {} ms", (System.nanoTime() - start) / 1000000.);
+                log.info("Method {} task took {} ms",method, (System.nanoTime() - start) / 1000000.);
             } else {
                 throw new RemoteException("cluster task timed out!");
             }
