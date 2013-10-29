@@ -7,6 +7,7 @@
 package Server;
 
 import Domain.Article;
+import Domain.ConsistencyLevel;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -19,6 +20,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static Domain.ConsistencyLevel.ALL;
+import static Domain.ConsistencyLevel.ONE;
 
 public class MasterServer extends Node implements Master
 {
@@ -46,7 +50,7 @@ public class MasterServer extends Node implements Master
                         .build());
     }
 
-	public int post(Article input) throws RemoteException
+	public int post(Article input, ConsistencyLevel level) throws RemoteException
     {
         //creates a new article with a unique id
         final int id;
@@ -61,7 +65,9 @@ public class MasterServer extends Node implements Master
 
         final Article article = input.setId(id);
 
-        runOnNodes(nodes.size() / 2 + 1, new Task()
+        // ALL, NONE, or write quorum
+        int quorum = level == ALL ? nodes.size() : level == ONE ? 1 : nodes.size() / 2 + 1;
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception
@@ -75,7 +81,7 @@ public class MasterServer extends Node implements Master
         return id;
     }
 
-	public List<Article> getArticles() throws RemoteException
+	public List<Article> getArticles(ConsistencyLevel level) throws RemoteException
     {
         // strategy: collect all returned articles from the nodes into a set,
         // nodes will return all articles they know about, so we'll get the union
@@ -84,7 +90,12 @@ public class MasterServer extends Node implements Master
         final SortedSet<Article> articles =
                 Collections.synchronizedSortedSet(Sets.<Article>newTreeSet());
 
-        runOnNodes((int) Math.ceil((nodes.size()) / 2.), new Task()
+        // ALL, NONE, or read quorum
+        int quorum =
+                level == ALL ? nodes.size() :
+                level == ONE ? 1 :
+                (int) Math.ceil(nodes.size() / 2.);
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception
@@ -97,13 +108,18 @@ public class MasterServer extends Node implements Master
         return Lists.newArrayList(articles);
     }
 
-	public Article choose(final int id) throws RemoteException
+	public Article choose(final int id, ConsistencyLevel level) throws RemoteException
     {
         // article will be the final returned article from the slaves
         // using an array so other threads can modify
         final Article[] article = new Article[1];
 
-        runOnNodes((int) Math.ceil((nodes.size()) / 2.), new Task()
+        // ALL, NONE, or read quorum
+        int quorum =
+                level == ALL ? nodes.size() :
+                level == ONE ? 1 :
+                (int) Math.ceil(nodes.size() / 2.);
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception

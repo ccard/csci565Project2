@@ -113,12 +113,14 @@ To interact with the server:
 
     ./client.sh [options]
 
-Run without options for usage documentation.
+Run `client.sh` without options for documentation and example usage.
 
 ## Tests
 
 ### Build
+
     make
+
 ### Run Tests
 
     java testClientMethods

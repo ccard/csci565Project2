@@ -7,6 +7,7 @@
 package Server;
 
 import Domain.Article;
+import Domain.ConsistencyLevel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -51,18 +52,18 @@ public class SlaveServer extends Node
         log.info("Registered with master at {}", masterName);
 	}
 
-	public int post(Article article) throws RemoteException
+	public int post(Article article, ConsistencyLevel level) throws RemoteException
 	{
-		return master.post(article);
+		return master.post(article, level);
 	}
 
-	public List<Article> getArticles() throws RemoteException
+	public List<Article> getArticles(ConsistencyLevel level) throws RemoteException
     {
-		return master.getArticles();
+		return master.getArticles(level);
 	}
 
-	public Article choose(int id) throws RemoteException
+	public Article choose(int id, ConsistencyLevel level) throws RemoteException
     {
-        return master.choose(id);
+        return master.choose(id, level);
     }
 }

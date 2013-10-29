@@ -2,10 +2,8 @@ package Client;
 
 import Domain.Article;
 import Domain.BulletinBoard;
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
-import com.beust.jcommander.Parameters;
+import Domain.ConsistencyLevel;
+import com.beust.jcommander.*;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
@@ -26,39 +24,93 @@ public class Client
     @Parameter(names = "-host",
                description = "Hostname of BulletinBoard server to which to connect.",
                required = true)
-    private String host;
+    public String host;
 
     @Parameter(names = "-port",
                description = "Port of BulletinBoard server to which to connect.",
                required = true)
-    private int port;
+    public int port;
 
     @Parameters(commandDescription = "Post a new article or reply to an existing article. " +
                                      "Article content is read from STDIN.")
     private static class PostCommand
     {
         @Parameter(names = {"-reply"},
-                description = "If replying to an existing article, the ID of that article.")
-        private int replyId = 0;
+                description = "If replying to an existing article, the ID of that article. " +
+                              "Default behaviour (0) is a top-level article.")
+        public int replyId = 0;
+
+        @Parameter(names = "-consistency",
+                   description = "Desired write consistency, either ALL, QUORUM, or ONE. " +
+                                 "See explanation of consistency below.",
+                   converter = ConsistencyConverter.class)
+        public ConsistencyLevel consistency = ConsistencyLevel.QUORUM;
+    }
+
+    private static class ReadCommand {
+        @Parameter(names = "-consistency",
+                   description = "Desired read consistency, either ALL, QUORUM, or ONE. " +
+                              "See explanation of consistency below.",
+                   converter = ConsistencyConverter.class)
+        public ConsistencyLevel consistency = ConsistencyLevel.QUORUM;
     }
 
     @Parameters(commandDescription = "List the 10 latest articles on the server.")
-    private static class ListCommand
+    private static class ListCommand extends ReadCommand
     {
         @Parameter(names = {"-offset"},
                 description = "ID from which to start listing articles. At most 10 articles" +
                               " are listed from this offset.")
-        private int offset = 0;
+        public int offset = 0;
     }
 
     @Parameters(commandDescription = "Get a specific article from the server.")
-    private static class GetCommand
+    private static class GetCommand extends ReadCommand
     {
         @Parameter(names = {"-id"},
                    description = "ID of the article to get.",
                    required = true)
-        private int id;
+        public int id;
     }
+
+    private static class ConsistencyConverter implements IStringConverter<ConsistencyLevel> {
+
+        @Override
+        public ConsistencyLevel convert(String s)
+        {
+            try
+            {
+                return ConsistencyLevel.valueOf(s);
+            } catch (IllegalArgumentException e)
+            {
+                throw new ParameterException("Consistency level " + s + " not recognized.");
+            }
+        }
+    }
+
+    public static final String HELP =
+            "Consistency explained:\n" +
+            "- ALL: Writes will wait for all nodes in the cluster to respond before returning,\n" +
+            "       i.e if the write succeeds, ALL nodes have replicated the write.\n" +
+            "       Reads will represent latest known article(s) of ALL nodes.\n" +
+            "- QUORUM: Writes will wait for n+2/1 nodes in the cluster to respond,\n" +
+            "          i.e if the write succeeds, a majority of nodes have replicated the write.\n" +
+            "          Reads will represent latest known article(s) in n/2 nodes in the cluster.\n" +
+            "          If using QUORUM write consistency, QUORUM read consistency must be used to\n" +
+            "          guarantee that writes will be visible in the read.\n" +
+            "- ONE: Writes will wait for one node in the cluster to respond.\n" +
+            "       Reads will represent the article(s) known to the first server to respond.\n" +
+            "       If ONE write consistency is used, then ALL read consistency must be used to\n" +
+            "       ensure writes will be visible. ALL writes can safely be read with ONE reads\n" +
+            "       (sequential consistency).\n\n" +
+            "Example usage:\n\n" +
+            "List articles:\n" +
+            "    ./client.sh -host localhost -port 5555 list -consistency ALL\n" +
+            "Get article:\n" +
+            "    ./client.sh -host localhost -port 5555 get -id 5 -consistency QUORUM\n" +
+            "Post article:\n" +
+            "    ./client.sh -host localhost -port 5555 post -reply -consistency ONE 1 \\\n" +
+            "                < hot-opinions.txt\n";
 
     /**
      * Sends a command to a random server in the cluster and writes the response to STDOUT.
@@ -82,6 +134,7 @@ public class Client
         {
             System.err.println(e.getMessage() + "\n");
             jCommander.usage();
+            System.err.println(HELP);
             System.exit(255);
         }
 
@@ -89,25 +142,24 @@ public class Client
         Registry reg = LocateRegistry.getRegistry(client.host, client.port);
         BulletinBoard server = (BulletinBoard) reg.lookup("BulletinBoard");
 
-        final String command = args[0];
         if ("post".equals(jCommander.getParsedCommand()))
         {
-            int parent = Integer.parseInt(args[1]);
 
             // slurp STDIN
             Scanner scanner = new Scanner(System.in).useDelimiter("\\Z");
             String content = scanner.nextLine();
             scanner.close();
 
-            Article article = new Article(content, parent);
+            Article article = new Article(content, postCommand.replyId);
 
-            server.post(article);
+            server.post(article, postCommand.consistency);
 
             System.err.println("Article posted.");
         }
         else if ("list".equals(jCommander.getParsedCommand()))
         {
-            List<Article> articles = server.getArticles(); // TODO offset and limit to 10
+            List<Article> articles = server.getArticles(listCommand.consistency);
+            // TODO offset and limit to 10
 
             Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
             {
@@ -160,12 +212,13 @@ public class Client
         }
         else if ("get".equals(jCommander.getParsedCommand()))
         {
-            Article article = server.choose(Integer.parseInt(args[1]));
+            Article article = server.choose(getCommand.id, getCommand.consistency);
             System.out.println(String.format("Article %s\n%s", article.id, article.content));
         }
         else
         {
             jCommander.usage();
+            System.err.println(HELP);
             System.exit(255);
         }
     }

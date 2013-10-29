@@ -17,18 +17,18 @@ public interface BulletinBoard extends Remote {
      * @return the article's id on success.
      * @throws RemoteException if post failed.
      */
-	int post(Article article) throws RemoteException;
+	int post(Article article, ConsistencyLevel level) throws RemoteException;
 
     /**
      * Retrieves all the articles from the read quorum.
      * @throws RemoteException if no articles are found.
      */
-	List<Article> getArticles() throws RemoteException;
+	List<Article> getArticles(ConsistencyLevel level) throws RemoteException;
 
     /**
      * Retrieves an article.
      * @param id the id of the desired article.
      * @throws RemoteException if the article is not found or other failure.
      */
-	Article choose(int id) throws RemoteException;
+	Article choose(int id, ConsistencyLevel level) throws RemoteException;
 }
