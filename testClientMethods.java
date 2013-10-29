@@ -216,11 +216,11 @@ public class testClientMethods
                 assert id == a.id;
                 break;
             case 1:
-                Article a = client2.chooseArticle(id);
+                a = client2.chooseArticle(id);
                 assert id == a.id;
                 break;
             case 2:
-                Article a = client3.chooseArticle(id);
+                a = client3.chooseArticle(id);
                 assert id == a.id;
                 break;
         }
