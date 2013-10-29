@@ -1,76 +1,38 @@
-Chris Card
-Steven Ruppert
-CSCI 565 Project 2: Distributed Bulletin Board
---------------------
+# CSCI 565 Project 2: Distributed Bulletin Board
 
+Authors: Chris Card, Steven Ruppert
 
 ## Files:
 
 - Server/:
-
- - *ArticleStore.java*: This is the local database for each server and is also used for some
-concurrent access controls
-
- - *Server.java*: This starts the specific types of servers either master or slave and binds
-them to a port
-
- - *MasterServer.java*: This contains the code specific to the *master/cordinator* node that controlls
-the *read/write* quorums to ensure the eventual consistency of the system. The master can be contacted
-directly by the client but the client shouldn't know if they are contacting the master or not.
-
- - *SlaveServer.java*: This contains the code specific to the *slaveservers*  node that responds
- to masters quorum request both read and write as well as servering requests for articles.
-
- - *Slave.java*: This class is an interface for the slave and node class to define general sever
- specific methods like replicate write and getLocalArticle methods.
-
- - *Master.java*: This class is an interface for Master specific functionality like regestering
- the slave nodes
-
- - *Node.java*: This class implements the slave interface and the is code for the general server
- functionality
-
+ - *ArticleStore.java*: JDBI-based persistent article database DAO.
+ - *Server.java*: starts the specific types of servers either master or slave
+    and binds them to a port.
+ - *MasterServer.java*: The master/coordinator node implementation. Controls the read/write
+   quorums to ensure the eventual consistency of the system.
+ - *SlaveServer.java*: Slave node implementation. Forwards operations to the master, and
+   replicates writes and reads.
+ - *Slave.java*: Interface definition for slave nodes, i.e. local read/write operations.
+ - *Master.java*: Master/coordinator-specific tasks e.g. slave node registration.
+ - *Node.java*: `ArticleStore`-backed implementation of BulletinBoard. Both MasterServer and
+    SlaveServer share this superclass.
 - Client/:
-
- - *Client.java*: This class is used primaraly for the client interactions with the servers. i.e.
- posting an article asking for an article or a list of articles
-
-- lib/:
-
- - *guava-15.0.jar*: This provides a thread executor service allowing for creating a thread poll to
- run multiple threads simultaneously
-
- - *jdbi-2.5.1.jar*: this library provides or data base for storing articles and also provides some
- unique id production as well as some concurrent access control
-
- - *log4j-api-2.0-beta9.jar*: This provides logging for the servers and client to facilitate debugging
- and operation of the servers
-
- - *log4j-core-2.0-beta9.jar*: This does the same thing as its counter part above
-
+ - *Client.java*: CLI client.
+- lib/: third-party libraries used in the project.
+ - *guava-15.0.jar*: Various nice java library functions.
+ - *jdbi-2.5.1.jar*: JDBC database access control made easier.
+ - *log4j-api-2.0-beta9.jar, log4j-core-2.0-beta9.jar*: Log4j2 logging framework.
 - Domain/:
-
- - *Article.java*: This class is used to define articles and exchagne them between the
- servers and the clients
-
- - *BulletinBoard.java*: This class is the overall interface for our java rmi methods and defines
- the three basic functions of the servers: post, choose, list
-
-- *runServer.sh*: This script starts a server either a master or slave
-
-- *runClient.sh*: This script starts the client and allows for interaction with the client
-
-- *startServers.sh*: This script starts the servers on multiple machines and reads in the machines
-to start on from the hosts.txt file
-
+ - *Article.java*: Main domain class, i.e. has an id and some text content.
+ - *BulletinBoard.java*: Client-facing interface for server nodes, i.e. POST, LIST, and GET
+   operations.
+- *runServer.sh*: Starts a server either a master or slave
+- *client.sh*: Convenience script to run CLI client defined in `Client.java` with the
+  correct java RMI options.
+- *startServers.sh*: starts servers on multiple machines specified by `hosts.txt`.
 - *hosts.txt*: defines the machines, ports, and types of servers to start on each machine
-and is in the following formate
-    type::hostname::portnumber
-ex:
-    [master | slave]::bb136-19.mines.edu::5555
-
-- *testClientMethods.java*: This class is used for testing the system through client interaction with
-several different servers
+   as `type::hostname::port` e.g. `[master | slave]::bb136-19.mines.edu::5555`.
+- *testClientMethods.java*: Test cases and test runner for cluster operation.
 
 ## Design
 
