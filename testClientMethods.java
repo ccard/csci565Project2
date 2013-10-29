@@ -82,7 +82,7 @@ public class testClientMethods
               break;
        }
 
-       System.out.println("testPostAndChoose: pass");
+       System.out.println("---------------------------\n---testPostAndChoose: Passed\n-----------------------------");
     }
 
    /**
@@ -113,20 +113,18 @@ public class testClientMethods
                 break;
         }
 
-        for(Article a : articles)
-        {
-            System.out.println(a.content);
-        }
+        assert articles.size() > 0;
 
-        System.out.println("testListArticles: Passed");
+        System.out.println("--------------------\n---testListArticles: Passed\n---------------------------");
     }
 
     /**
     * This method tests multiple clients posting near simultaneously
     * @throws AssertionError if the test fails
     */
-   public void testPostMuliClients()throws AssertionError
+   public void testPostMultiClients()throws AssertionError
    {
+       System.out.println("testPostMultiClients:\n------------------------");
        flag.set(false);
        final Article a1,a2,a3;
        a1 = new Article("This is a post from client 1",0);
@@ -145,6 +143,7 @@ public class testClientMethods
                    Article temp = client1.chooseArticle(id);
                    assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 1: Passed");
                }
                catch (Exception e)
                {
@@ -165,6 +164,7 @@ public class testClientMethods
                    Article temp = client2.chooseArticle(id);
                    assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 2: Passed");
                }
                catch (Exception e)
                {
@@ -185,6 +185,7 @@ public class testClientMethods
                    Article temp = client3.chooseArticle(id);
                    assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 3: Passed");
                }
                catch (Exception e)
                {
@@ -201,13 +202,26 @@ public class testClientMethods
        try {
            boolean passed = count.await(3,TimeUnit.SECONDS);
            assert passed;
-           System.out.println("testPostMultiCllients: Passed");
+           System.out.println("---testPostMultiCllients: Passed\n--------------------------");
        } catch (InterruptedException e) {
            throw new AssertionError("Threads where interupted");
        }
    }
 
-
+    public void testOneClientMultiPost() throws AssertionError
+    {
+        System.out.println("testOneClientMultiPost:\n-------------------------");
+        try
+        {
+            client2.postToAllConnected(new Article("post 1 from client2",0),new Article("post 2 from client2",0));
+        }
+        catch (Error e)
+        {
+            e.printStackTrace();
+            assert false;
+        }
+        System.out.println("---testOneClientMultiPost: Passed\n-----------------------------------");
+    }
 
     /**
     * This provides the client interface for testing posting,listing and
@@ -371,8 +385,11 @@ public class testClientMethods
                     {
                         try
                         {
-                            node.post(articles[i]);
+                            int id = node.post(articles[i]);
+                            Article temp = node.choose(id);
+                            assert temp.id == id;
                             latch.countDown();
+                            System.out.println("Node Passed");
                         } catch (RemoteException e)
                         {
                             // TODO log
@@ -513,9 +530,13 @@ public class testClientMethods
        testClientMethods t = new testClientMethods();
        try
        {
+           long start = System.currentTimeMillis();
            t.testPostAndChoose();
 		   t.testListArticles();
-           t.testPostMuliClients();
+           t.testPostMultiClients();
+           t.testOneClientMultiPost();
+           start = System.currentTimeMillis()-start;
+           System.out.println("ALL PASSED, runtime: "+start+" ms");
        }
        catch (Exception e)
        {
