@@ -30,9 +30,11 @@ public class testClientMethods
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
    public static AtomicBoolean flag = new AtomicBoolean(false);
+   public ExecutorService executorService;
 
    public testClientMethods()
    {
+       executorService = Executors.newCachedThreadPool();
        serverstext = new ArrayList<String>();
        serverstext.add("master::bb136-19.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5555");
@@ -208,6 +210,10 @@ public class testClientMethods
        }
    }
 
+    /**
+     * This tests one client submitting multiple posts
+     * @throws AssertionError if failed
+     */
     public void testOneClientMultiPost() throws AssertionError
     {
         System.out.println("testOneClientMultiPost:\n-------------------------");
@@ -221,6 +227,68 @@ public class testClientMethods
             assert false;
         }
         System.out.println("---testOneClientMultiPost: Passed\n-----------------------------------");
+    }
+
+    public void runTestLoad() throws Exception
+    {
+        ArrayList<Client> clients = new ArrayList<Client>();
+
+        clients.add(client1);
+        clients.add(client2);
+        clients.add(client3);
+
+        Random rand = new Random(System.currentTimeMillis());
+
+        for (int i = 0; i < 7; i++)
+        {
+            Client temp = new Client(serverstext.get(rand.nextInt(serverstext.size())));
+            clients.add(temp);
+        }
+        final CountDownLatch count = new CountDownLatch(clients.size());
+        for (final Client c : clients)
+        {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try
+                    {
+                       int id = c.postArticle(new Article("LoadTesting",0));
+                       c.chooseArticle(id);
+                       count.countDown();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+
+        final CountDownLatch count2 = new CountDownLatch(clients.size());
+        for (final Client c : clients)
+        {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try
+                    {
+                        c.getArticles();
+                        count2.countDown();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+
+        boolean load1 = count.await(5,TimeUnit.SECONDS);
+        boolean load2 = count2.await(5,TimeUnit.SECONDS);
+        if(load1 && load2)
+        {
+            System.out.println("-------------\nLOAD RUN FINISHED\n------------");
+        }
     }
 
     /**
@@ -445,7 +513,7 @@ public class testClientMethods
    {
         try
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args+" >> log"+System.currentTimeMillis()+".log");
             run.redirectErrorStream(true);
             Process p = run.start();
             BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -535,6 +603,7 @@ public class testClientMethods
 		   t.testListArticles();
            t.testPostMultiClients();
            t.testOneClientMultiPost();
+           t.runTestLoad();
            start = System.currentTimeMillis()-start;
            System.out.println("ALL PASSED, runtime: "+start+" ms");
        }
