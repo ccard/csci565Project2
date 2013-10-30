@@ -5,7 +5,6 @@ Authors: Chris Card, Steven Ruppert
 ## Files:
 
 - Server/:
- - *ArticleStore.java*: JDBI-based persistent article database DAO.
  - *Server.java*: starts the specific types of servers either master or slave
     and binds them to a port.
  - *MasterServer.java*: The master/coordinator node implementation. Controls the read/write
@@ -22,10 +21,13 @@ Authors: Chris Card, Steven Ruppert
  - *guava-15.0.jar*: Various nice java library functions.
  - *jdbi-2.5.1.jar*: JDBC database access control made easier.
  - *log4j-api-2.0-beta9.jar, log4j-core-2.0-beta9.jar*: Log4j2 logging framework.
+ - *jcommander-1.32.jar*: args parsing without ripping your hair out.
 - Domain/:
  - *Article.java*: Main domain class, i.e. has an id and some text content.
  - *BulletinBoard.java*: Client-facing interface for server nodes, i.e. POST, LIST, and GET
    operations.
+- Shared/:
+ - *ArticleStore.java*: JDBI-based persistent article database DAO.
 - *runServer.sh*: Starts a server either a master or slave
 - *client.sh*: Convenience script to run CLI client defined in `Client.java` with the
   correct java RMI options.
