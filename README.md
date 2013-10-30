@@ -87,10 +87,9 @@ Run `client.sh` without options for documentation and example usage.
 
 ### Run Tests
 
-    java testClientMethods
+    ./runTests.sh
 
 This will print out success if the tests pass other wise it will throw an error
-
-### Benchmark
--To run the bench mark:
+This will also run the benchmark for the system then run `./getStats.rb <output csv filename>`
+to get a csv file of the stats of all operations
 
