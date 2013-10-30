@@ -1,8 +1,8 @@
 /**
- * @Author Chris Card, Steven  Rupert
+ * @Author Chris Card, Steven Ruppert
  * This is the local data base store for each server
  */
-package Server;
+package Shared;
 
 import Domain.Article;
 import org.skife.jdbi.v2.StatementContext;

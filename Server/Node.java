@@ -1,6 +1,7 @@
 package Server;
 
 import Domain.Article;
+import Shared.ArticleStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.skife.jdbi.v2.DBI;

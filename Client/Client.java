@@ -3,12 +3,13 @@ package Client;
 import Domain.Article;
 import Domain.BulletinBoard;
 import Domain.ConsistencyLevel;
+import Shared.ArticleStore;
 import com.beust.jcommander.*;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -31,6 +32,15 @@ public class Client
                required = true)
     public int port;
 
+    @Parameter(names = "-local",
+            description = "H2 database file to use for local writes. If the file does " +
+                          "not exist, it will be created. If not specified, writes will " +
+                          "not be persisted locally. Note that since ids are coordinated " +
+                          "by the server, writes cannot occur without a server connection. " +
+                          "However, local writes does enable clients to use lower server read " +
+                          "consistency while still reading their own writes.")
+    public String localDatabase;
+
     @Parameters(commandDescription = "Post a new article or reply to an existing article. " +
                                      "Article content is read from STDIN.")
     private static class PostCommand
@@ -50,12 +60,15 @@ public class Client
     private static class ReadCommand {
         @Parameter(names = "-consistency",
                    description = "Desired read consistency, either ALL, QUORUM, or ONE. " +
-                              "See explanation of consistency below.",
+                                 "See explanation of consistency below.",
                    converter = ConsistencyConverter.class)
         public ConsistencyLevel consistency = ConsistencyLevel.QUORUM;
     }
 
-    @Parameters(commandDescription = "List the 10 latest articles on the server.")
+    @Parameters(commandDescription = "List the 10 latest articles on the server, organized by " +
+                                     "reply id, then reply-chain order. Note that replies to " +
+                                     "articles made before `offset` will not be shown (since their " +
+                                     "parent article is not shown).")
     private static class ListCommand extends ReadCommand
     {
         @Parameter(names = {"-offset"},
@@ -103,6 +116,10 @@ public class Client
             "       If ONE write consistency is used, then ALL read consistency must be used to\n" +
             "       ensure writes will be visible. ALL writes can safely be read with ONE reads\n" +
             "       (sequential consistency).\n\n" +
+            "Local writes explained:\n" +
+            "  If a '-local' database is specified, writes and reads will additionally hit " +
+            "  the local database, so even ONE writes + ONE reads still have write-your-reads " +
+            "  consistency.\n\n" +
             "Example usage:\n\n" +
             "List articles:\n" +
             "    ./client.sh -host localhost -port 5555 list -consistency ALL\n" +
@@ -142,9 +159,15 @@ public class Client
         Registry reg = LocateRegistry.getRegistry(client.host, client.port);
         BulletinBoard server = (BulletinBoard) reg.lookup("BulletinBoard");
 
+        // connect to local article database, or an in-memory database until client shutdown.
+        DBI dbi = new DBI(null == client.localDatabase ?
+                          "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1" :
+                          "jdbc:h2:./" + client.localDatabase);
+        ArticleStore articleStore = dbi.onDemand(ArticleStore.class);
+        articleStore.initializeTable();
+
         if ("post".equals(jCommander.getParsedCommand()))
         {
-
             // slurp STDIN
             Scanner scanner = new Scanner(System.in).useDelimiter("\\Z");
             String content = scanner.nextLine();
@@ -152,23 +175,45 @@ public class Client
 
             Article article = new Article(content, postCommand.replyId);
 
-            server.post(article, postCommand.consistency);
+            int id = server.post(article, postCommand.consistency);
 
-            System.err.println("Article posted.");
+            // replicate locally
+            articleStore.insert(article.setId(id));
+
+            System.err.println("Article " + id + " posted.");
         }
         else if ("list".equals(jCommander.getParsedCommand()))
         {
-            List<Article> articles = server.getArticles(listCommand.offset,
+            List<Article> localArticles = articleStore.getArticles(listCommand.offset);
+            List<Article> serverArticles = server.getArticles(listCommand.offset,
                                                         listCommand.consistency);
 
-            Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
+            // merge local articles with server articles
+            Set<Article> articles =
+                    ImmutableSet.copyOf(Iterables.concat(localArticles, serverArticles));
+
+            // write server articles to local db
+            for (Article serverArticle : serverArticles)
             {
-                @Override
-                public Integer apply(Domain.Article article)
+                try
                 {
-                    return article.id;
+                    articleStore.insert(serverArticle);
+                } catch (UnableToExecuteStatementException ignored)
+                {
+                    // ignore primary key violations.
                 }
-            });
+            }
+
+            Map<Integer, Article> articlesById = Maps.uniqueIndex(
+                    articles,
+                    new Function<Article, Integer>()
+                    {
+                        @Override
+                        public Integer apply(Domain.Article article)
+                        {
+                            return article.id;
+                        }
+                    });
 
             // index replies
             TreeMultimap<Article, Article> replies = TreeMultimap.create();
