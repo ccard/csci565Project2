@@ -7,6 +7,7 @@
 package Server;
 
 import Domain.Article;
+import Domain.NotFound404Exception;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -145,7 +146,12 @@ public class MasterServer extends Node implements Master
                     {
                         task.run(node);
                         latch.countDown();
-                    } catch (Exception e)
+                    }
+                    catch (NotFound404Exception e)
+                    {
+
+                    }
+                    catch (Exception e)
                     {
                         log.error("cluster task failed!", e);
                     }
