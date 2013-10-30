@@ -2,7 +2,7 @@
 
 def showUsage
 puts <<EOF
-getStats.rb <inputLogfile> <outputcsvfile>
+getStats.rb <outputcsvfile>
 EOF
 exit
 end
@@ -12,17 +12,26 @@ def writeFile(line="")
 	@file.puts line unless line.empty?
 end
 
-showUsage unless ARGV.size == 2
+def readFile(file)
+	input = File.open file,'r'
+	input.each do |line|
+		if /(^.+<)(LIST|POST|CHOOSE)(>.+)(\d+ | \d+\.\d+)(\s+)(ms$)/ =~ line
+			writeFile "#{$2},#{$4},#{$6}"
+		end
+	end
+	input.close
+end
 
-@file = File.open ARGV[1],'w'
-@in = File.open ARGV[0],'r'
+showUsage unless ARGV.size == 1
+
+@file = File.open ARGV[0],'w'
 writeFile
-@in.each do |line|
-	if /(^.+<)(LIST|POST|CHOOSE)(>.+)(\d+ | \d+\.\d+)(\s+)(ms$)/ =~ line
+ls = `ls`
+ls.each do |line| 
+	if /^log\d{5,}\.log/ =~ line
 		puts line
-		writeFile "#{$2},#{$4},#{$6}"
+		readFile line.chomp
 	end
 end
 
 @file.close
-@in.close
