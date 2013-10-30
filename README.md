@@ -50,6 +50,8 @@ directly by the client but the client shouldn't know if they are contacting the 
 
 - Domain/:
 
+ - *NotFound404Exception.java*: This error is thrown when the servers cant find the articles
+
  - *Article.java*: This class is used to define articles and exchagne them between the
  servers and the clients
 
@@ -133,7 +135,8 @@ To run an Client program use:
     java testClientMethods
 
 This will print out success if the tests pass other wise it will throw an error
+This Program also performs the benchmarking. to gather the statistics of the benchmark run command
+`./getStats.rb <output csv filename>` which will gather the run times from the log files to the
+specified csv file to put into excel
 
-### Benchmark
--To run the bench mark:
 
