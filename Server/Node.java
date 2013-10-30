@@ -5,6 +5,7 @@ import Shared.ArticleStore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 
 import java.rmi.RemoteException;
 import java.util.*;
@@ -97,5 +98,29 @@ public abstract class Node implements Slave
             // Thus, wrap message in a serializable runtimeException without a cause.
             throw new RuntimeException("Couldn't read articles: " + e.getMessage());
         }
+    }
+
+    @Override
+    public void sync(Slave node) throws RemoteException
+    {
+        log.debug("Syncing state with other node...");
+        long start = System.nanoTime();
+        for (Article article : node.getAllArticles())
+        {
+            try
+            {
+                articleStore.insert(article);
+            } catch (UnableToExecuteStatementException ignored)
+            {
+                // ignore primary key constraint violations, article already exists.
+            }
+        }
+        log.debug("State synced in {} ms.", (System.nanoTime() - start) / 1000000);
+    }
+
+    @Override
+    public List<Article> getAllArticles() throws RemoteException
+    {
+        return articleStore.getAllArticles();
     }
 }

@@ -47,6 +47,9 @@ public interface ArticleStore
     @SqlQuery("select * from articles where id > :offset order by id desc limit 10")
     List<Article> getArticles(@Bind("offset") int offset);
 
+    @SqlQuery("select * from articles")
+    List<Article> getAllArticles();
+
     @SqlQuery("select * from articles where id = :id")
     Article get(@Bind("id") int id);
 

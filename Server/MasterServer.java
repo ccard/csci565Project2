@@ -140,10 +140,27 @@ public class MasterServer extends Node implements Master
         }
     }
 
-    public void registerSlaveNode(Slave slave, String identifier) throws RemoteException
+    public void registerSlaveNode(final Slave slave, final String identifier) throws RemoteException
     {
         nodes.add(slave);
         log.info("Slave {} registered. Cluster now contains {} nodes.", identifier, nodes.size());
+
+        // periodically sync writes with slave
+        new Timer("sync-" + identifier, true).schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                log.debug("Sending sync request to slave " + identifier);
+                try
+                {
+                    slave.sync(MasterServer.this);
+                } catch (RemoteException e)
+                {
+                    log.error("Couldn't sync slave " + identifier, e);
+                }
+            }
+        }, 10000, 10000);
     }
 
     private void runOnNodes(int minSuccesses, final Task task) throws RemoteException
