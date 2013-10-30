@@ -8,5 +8,8 @@ import java.io.Serializable;
  */                     
 public class NotFound404Exception extends Exception implements Serializable {
     
-    public NotFound404Exception(String)
+    public NotFound404Exception(String Msg)
+    {
+        super(Msg);
+    }
 }
