@@ -1,5 +1,7 @@
 import Domain.Article;
 import Domain.BulletinBoard;
+import Domain.ConsistencyLevel;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -17,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 //import org.apache.logging.log4j.Logger;
 
 /**
- * @Author Chris card, Steven Rupert
- * This mehtod runs test on the clients interaction with the server
+ * @author Chris card, Steven Rupert
+ * This method runs test on the clients interaction with the server
  * because if the client fails then we know that the servers failed
  *
  * This is only tested with 3 servers and 2 clients
@@ -34,7 +36,8 @@ public class testClientMethods
 
    public testClientMethods()
    {
-       executorService = Executors.newCachedThreadPool();
+       executorService = Executors.newCachedThreadPool(
+               new ThreadFactoryBuilder().setDaemon(true).build());
        serverstext = new ArrayList<String>();
        serverstext.add("master::bb136-19.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5555");
@@ -53,7 +56,10 @@ public class testClientMethods
 
    public void stop()
    {
-        stopServers(serverstext);
+       stopServers(serverstext);
+       System.err.println("Shutting down executor threads...");
+       executorService.shutdownNow();
+       System.err.println("executor threads stopped.");
    }
 
    /**
@@ -366,7 +372,7 @@ public class testClientMethods
 
             try
             {
-                return servers.get(choice).post(a);
+                return servers.get(choice).post(a, ConsistencyLevel.QUORUM);
             }
             catch (RemoteException e)
             {
@@ -391,7 +397,7 @@ public class testClientMethods
             Article ret = null;
             try
             {
-                ret = servers.get(choice).choose(i);
+                ret = servers.get(choice).choose(i, ConsistencyLevel.QUORUM);
             }
             catch (Exception e)
             {
@@ -417,7 +423,7 @@ public class testClientMethods
 
             try
             {
-               ret = servers.get(choice).getArticles();
+               ret = servers.get(choice).getArticles(0, ConsistencyLevel.QUORUM);
             }
             catch (Exception e)
             {
@@ -453,8 +459,8 @@ public class testClientMethods
                     {
                         try
                         {
-                            int id = node.post(articles[i]);
-                            Article temp = node.choose(id);
+                            int id = node.post(articles[i], ConsistencyLevel.QUORUM);
+                            Article temp = node.choose(id, ConsistencyLevel.QUORUM);
                             assert temp.id == id;
                             latch.countDown();
                             System.out.println("Node Passed");
@@ -523,6 +529,7 @@ public class testClientMethods
                 if (line.contains("EOF")) break;
                 System.out.println(line);
             }
+            b.close();
         }
         catch(Exception e)
         {
@@ -605,7 +612,7 @@ public class testClientMethods
            t.testOneClientMultiPost();
            t.runTestLoad();
            start = System.currentTimeMillis()-start;
-           System.out.println("ALL PASSED, runtime: "+start+" ms");
+           System.out.println("ALL PASSED, runtime: " + start + " ms");
        }
        catch (Exception e)
        {
@@ -616,6 +623,7 @@ public class testClientMethods
        {
            t.stop();
        }
+       System.exit(0);
    }
 }
 

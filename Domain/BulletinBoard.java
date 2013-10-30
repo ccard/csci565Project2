@@ -12,23 +12,24 @@ import java.util.*;
 
 public interface BulletinBoard extends Remote {
     /**
-     * Posts the article to the write quorum.
+     * Posts the article to the cluster.
      * @param article article to post. The input {@link Article#id} is ignored.
      * @return the article's id on success.
      * @throws RemoteException if post failed.
      */
-	int post(Article article) throws RemoteException;
+	int post(Article article, ConsistencyLevel level) throws RemoteException;
 
     /**
-     * Retrieves all the articles from the read quorum.
-     * @throws RemoteException if no articles are found.
+     * Retrieves up to 10 articles from the cluster with ids greater than `offset`.
+     * @param offset id from which to start listing articles.
+     * @throws RemoteException if listing articles fails.
      */
-	List<Article> getArticles() throws RemoteException;
+	List<Article> getArticles(int offset, ConsistencyLevel level) throws RemoteException;
 
     /**
      * Retrieves an article.
      * @param id the id of the desired article.
      * @throws RemoteException if the article is not found or other failure.
      */
-	Article choose(int id) throws RemoteException;
+	Article choose(int id, ConsistencyLevel level) throws RemoteException;
 }

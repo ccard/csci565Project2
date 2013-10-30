@@ -7,6 +7,7 @@
 package Server;
 
 import Domain.Article;
+import Domain.ConsistencyLevel;
 import Domain.NotFound404Exception;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -20,6 +21,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static Domain.ConsistencyLevel.ALL;
+import static Domain.ConsistencyLevel.ONE;
 
 public class MasterServer extends Node implements Master
 {
@@ -47,7 +51,7 @@ public class MasterServer extends Node implements Master
                         .build());
     }
 
-	public int post(Article input) throws RemoteException
+	public int post(Article input, ConsistencyLevel level) throws RemoteException
     {
         //creates a new article with a unique id
         final int id;
@@ -62,7 +66,9 @@ public class MasterServer extends Node implements Master
 
         final Article article = input.setId(id);
 
-        runOnNodes(nodes.size() / 2 + 1, new Task()
+        // ALL, NONE, or write quorum
+        int quorum = level == ALL ? nodes.size() : level == ONE ? 1 : nodes.size() / 2 + 1;
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception
@@ -76,7 +82,7 @@ public class MasterServer extends Node implements Master
         return id;
     }
 
-	public List<Article> getArticles() throws RemoteException
+	public List<Article> getArticles(final int offset, ConsistencyLevel level) throws RemoteException
     {
         // strategy: collect all returned articles from the nodes into a set,
         // nodes will return all articles they know about, so we'll get the union
@@ -85,12 +91,17 @@ public class MasterServer extends Node implements Master
         final SortedSet<Article> articles =
                 Collections.synchronizedSortedSet(Sets.<Article>newTreeSet());
 
-        runOnNodes((int) Math.ceil((nodes.size()) / 2.), new Task()
+        // ALL, NONE, or read quorum
+        int quorum =
+                level == ALL ? nodes.size() :
+                level == ONE ? 1 :
+                (int) Math.ceil(nodes.size() / 2.);
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception
             {
-                articles.addAll(node.getLocalArticles());
+                articles.addAll(node.getLocalArticles(offset));
             }
         },"<LIST>");
 
@@ -98,7 +109,7 @@ public class MasterServer extends Node implements Master
         return Lists.newArrayList(articles);
     }
 
-	public Article choose(final int id) throws RemoteException
+	public Article choose(final int id, ConsistencyLevel level) throws RemoteException
     {
         // article will be the final returned article from the slaves
         // using an array so other threads can modify
@@ -125,17 +136,38 @@ public class MasterServer extends Node implements Master
         }
     }
 
-    public void registerSlaveNode(Slave slave, String identifier) throws RemoteException
+    public void registerSlaveNode(final Slave slave, final String identifier) throws RemoteException
     {
         nodes.add(slave);
         log.info("Slave {} registered. Cluster now contains {} nodes.", identifier, nodes.size());
+
+        // periodically sync writes with slave
+        new Timer("sync-" + identifier, true).schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                log.debug("Sending sync request to slave " + identifier);
+                try
+                {
+                    slave.sync(MasterServer.this);
+                } catch (RemoteException e)
+                {
+                    log.error("Couldn't sync slave " + identifier, e);
+                }
+            }
+        }, 10000, 10000);
     }
 
     private void runOnNodes(int minSuccesses, final Task task,String method) throws RemoteException
     {
         long start = System.nanoTime();
         final CountDownLatch latch = new CountDownLatch(minSuccesses);
-        for (final Slave node : nodes)
+
+        // balance load across cluster by shuffling nodes.
+        List<Slave> shuffledNodes = Lists.newArrayList(nodes);
+        Collections.shuffle(shuffledNodes);
+        for (final Slave node : shuffledNodes)
         {
             executorService.submit(new Runnable()
             {

@@ -1,8 +1,8 @@
 /**
- * @Author Chris Card, Steven  Rupert
+ * @Author Chris Card, Steven Ruppert
  * This is the local data base store for each server
  */
-package Server;
+package Shared;
 
 import Domain.Article;
 import org.skife.jdbi.v2.StatementContext;
@@ -44,8 +44,11 @@ public interface ArticleStore
     @SqlUpdate("insert into articles (id, content, parent) values (:id, :content, :parent)")
     void insert(@BindBean Article article);
 
+    @SqlQuery("select * from articles where id > :offset order by id desc limit 10")
+    List<Article> getArticles(@Bind("offset") int offset);
+
     @SqlQuery("select * from articles")
-    List<Article> getAll();
+    List<Article> getAllArticles();
 
     @SqlQuery("select * from articles where id = :id")
     Article get(@Bind("id") int id);

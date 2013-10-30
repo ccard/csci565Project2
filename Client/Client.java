@@ -2,11 +2,14 @@ package Client;
 
 import Domain.Article;
 import Domain.BulletinBoard;
+import Domain.ConsistencyLevel;
+import Shared.ArticleStore;
+import com.beust.jcommander.*;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
+import org.skife.jdbi.v2.DBI;
+import org.skife.jdbi.v2.exceptions.UnableToExecuteStatementException;
 
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -19,67 +22,198 @@ import java.util.*;
  */
 public class Client
 {
+    @Parameter(names = "-host",
+               description = "Hostname of BulletinBoard server to which to connect.",
+               required = true)
+    public String host;
 
-    public static final String USAGE =
-            "Usage: COMMAND [REPLY_ID|OFFSET|ARTICLE_ID] [SERVER HOST] [SERVER PORT]\n" +
-            "  COMMAND: Either POST, LIST, or GET, case insensitive\n" +
-            "      POST: post a new article. Content is read from STDIN.\n" +
-            "            REPLY_ID _must_ be present, and equal to 0 if not replying\n" +
-            "            to an existing post.\n" +
-            "      LIST: list articles on the server, up to 10 at a time.\n" +
-            "            OFFSET must be present. Use\n" +
-            "            0 to read articles from the beginning.\n" +
-            "      GET: get a specific article on the server. ARTICLE_ID must\n" +
-            "           be present.";
+    @Parameter(names = "-port",
+               description = "Port of BulletinBoard server to which to connect.",
+               required = true)
+    public int port;
+
+    @Parameter(names = "-local",
+            description = "H2 database file to use for local writes. If the file does " +
+                          "not exist, it will be created. If not specified, writes will " +
+                          "not be persisted locally. Note that since ids are coordinated " +
+                          "by the server, writes cannot occur without a server connection. " +
+                          "However, local writes does enable clients to use lower server read " +
+                          "consistency while still reading their own writes.")
+    public String localDatabase;
+
+    @Parameters(commandDescription = "Post a new article or reply to an existing article. " +
+                                     "Article content is read from STDIN.")
+    private static class PostCommand
+    {
+        @Parameter(names = {"-reply"},
+                description = "If replying to an existing article, the ID of that article. " +
+                              "Default behaviour (0) is a top-level article.")
+        public int replyId = 0;
+
+        @Parameter(names = "-consistency",
+                   description = "Desired write consistency, either ALL, QUORUM, or ONE. " +
+                                 "See explanation of consistency below.",
+                   converter = ConsistencyConverter.class)
+        public ConsistencyLevel consistency = ConsistencyLevel.QUORUM;
+    }
+
+    private static class ReadCommand {
+        @Parameter(names = "-consistency",
+                   description = "Desired read consistency, either ALL, QUORUM, or ONE. " +
+                                 "See explanation of consistency below.",
+                   converter = ConsistencyConverter.class)
+        public ConsistencyLevel consistency = ConsistencyLevel.QUORUM;
+    }
+
+    @Parameters(commandDescription = "List the 10 latest articles on the server, organized by " +
+                                     "reply id, then reply-chain order. Note that replies to " +
+                                     "articles made before `offset` will not be shown (since their " +
+                                     "parent article is not shown).")
+    private static class ListCommand extends ReadCommand
+    {
+        @Parameter(names = {"-offset"},
+                description = "ID from which to start listing articles. At most 10 articles" +
+                              " are listed from this offset.")
+        public int offset = 0;
+    }
+
+    @Parameters(commandDescription = "Get a specific article from the server.")
+    private static class GetCommand extends ReadCommand
+    {
+        @Parameter(names = {"-id"},
+                   description = "ID of the article to get.",
+                   required = true)
+        public int id;
+    }
+
+    private static class ConsistencyConverter implements IStringConverter<ConsistencyLevel> {
+
+        @Override
+        public ConsistencyLevel convert(String s)
+        {
+            try
+            {
+                return ConsistencyLevel.valueOf(s);
+            } catch (IllegalArgumentException e)
+            {
+                throw new ParameterException("Consistency level " + s + " not recognized.");
+            }
+        }
+    }
+
+    public static final String HELP =
+            "Consistency explained:\n" +
+            "- ALL: Writes will wait for all nodes in the cluster to respond before returning,\n" +
+            "       i.e if the write succeeds, ALL nodes have replicated the write.\n" +
+            "       Reads will represent latest known article(s) of ALL nodes.\n" +
+            "- QUORUM: Writes will wait for n+2/1 nodes in the cluster to respond,\n" +
+            "          i.e if the write succeeds, a majority of nodes have replicated the write.\n" +
+            "          Reads will represent latest known article(s) in n/2 nodes in the cluster.\n" +
+            "          If using QUORUM write consistency, QUORUM read consistency must be used to\n" +
+            "          guarantee that writes will be visible in the read.\n" +
+            "- ONE: Writes will wait for one node in the cluster to respond.\n" +
+            "       Reads will represent the article(s) known to the first server to respond.\n" +
+            "       If ONE write consistency is used, then ALL read consistency must be used to\n" +
+            "       ensure writes will be visible. ALL writes can safely be read with ONE reads\n" +
+            "       (sequential consistency).\n\n" +
+            "Local writes explained:\n" +
+            "  If a '-local' database is specified, writes and reads will additionally hit " +
+            "  the local database, so even ONE writes + ONE reads still have write-your-reads " +
+            "  consistency.\n\n" +
+            "Example usage:\n\n" +
+            "List articles:\n" +
+            "    ./client.sh -host localhost -port 5555 list -consistency ALL\n" +
+            "Get article:\n" +
+            "    ./client.sh -host localhost -port 5555 get -id 5 -consistency QUORUM\n" +
+            "Post article:\n" +
+            "    ./client.sh -host localhost -port 5555 post -reply -consistency ONE 1 \\\n" +
+            "                < hot-opinions.txt\n";
 
     /**
      * Sends a command to a random server in the cluster and writes the response to STDOUT.
      */
     public static void main(String args[]) throws Throwable
     {
-        if (args.length != 4)
+        Client client = new Client();
+        JCommander jCommander = new JCommander(client);
+        jCommander.setProgramName("client.sh");
+        PostCommand postCommand = new PostCommand();
+        jCommander.addCommand("post", postCommand);
+        ListCommand listCommand = new ListCommand();
+        jCommander.addCommand("list", listCommand);
+        GetCommand getCommand = new GetCommand();
+        jCommander.addCommand("get", getCommand);
+
+        try
         {
-            System.err.println(USAGE);
+            jCommander.parse(args);
+        } catch (ParameterException e)
+        {
+            System.err.println(e.getMessage() + "\n");
+            jCommander.usage();
+            System.err.println(HELP);
             System.exit(255);
         }
 
-        final String host = args[2];
-        final int port = Integer.parseInt(args[3]);
-
         // connect to server
-        Registry reg = LocateRegistry.getRegistry(host, port);
+        Registry reg = LocateRegistry.getRegistry(client.host, client.port);
         BulletinBoard server = (BulletinBoard) reg.lookup("BulletinBoard");
 
-        final String command = args[0];
-        if ("post".equals(command.toLowerCase()))
-        {
-            int parent = Integer.parseInt(args[1]);
+        // connect to local article database, or an in-memory database until client shutdown.
+        DBI dbi = new DBI(null == client.localDatabase ?
+                          "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1" :
+                          "jdbc:h2:./" + client.localDatabase);
+        ArticleStore articleStore = dbi.onDemand(ArticleStore.class);
+        articleStore.initializeTable();
 
+        if ("post".equals(jCommander.getParsedCommand()))
+        {
             // slurp STDIN
             Scanner scanner = new Scanner(System.in).useDelimiter("\\Z");
             String content = scanner.nextLine();
             scanner.close();
 
-            Article article = new Article(content, parent);
+            Article article = new Article(content, postCommand.replyId);
 
-            server.post(article);
+            int id = server.post(article, postCommand.consistency);
 
-            System.err.println("Article posted.");
+            // replicate locally
+            articleStore.insert(article.setId(id));
+
+            System.err.println("Article " + id + " posted.");
         }
-        else if ("list".equals(command.toLowerCase()))
+        else if ("list".equals(jCommander.getParsedCommand()))
         {
-            //int offset = Integer.parseInt(args[1]);
+            List<Article> localArticles = articleStore.getArticles(listCommand.offset);
+            List<Article> serverArticles = server.getArticles(listCommand.offset,
+                                                        listCommand.consistency);
 
-            List<Article> articles = server.getArticles(); // TODO offset and limit to 10
+            // merge local articles with server articles
+            Set<Article> articles =
+                    ImmutableSet.copyOf(Iterables.concat(localArticles, serverArticles));
 
-            Map<Integer, Article> articlesById = Maps.uniqueIndex(articles, new Function<Article, Integer>()
+            // write server articles to local db
+            for (Article serverArticle : serverArticles)
             {
-                @Override
-                public Integer apply(Domain.Article article)
+                try
                 {
-                    return article.id;
+                    articleStore.insert(serverArticle);
+                } catch (UnableToExecuteStatementException ignored)
+                {
+                    // ignore primary key violations.
                 }
-            });
+            }
+
+            Map<Integer, Article> articlesById = Maps.uniqueIndex(
+                    articles,
+                    new Function<Article, Integer>()
+                    {
+                        @Override
+                        public Integer apply(Domain.Article article)
+                        {
+                            return article.id;
+                        }
+                    });
 
             // index replies
             TreeMultimap<Article, Article> replies = TreeMultimap.create();
@@ -121,14 +255,15 @@ public class Client
                 }
             }
         }
-        else if ("get".equals(command.toLowerCase()))
+        else if ("get".equals(jCommander.getParsedCommand()))
         {
-            Article article = server.choose(Integer.parseInt(args[1]));
+            Article article = server.choose(getCommand.id, getCommand.consistency);
             System.out.println(String.format("Article %s\n%s", article.id, article.content));
         }
         else
         {
-            System.err.println(USAGE);
+            jCommander.usage();
+            System.err.println(HELP);
             System.exit(255);
         }
     }

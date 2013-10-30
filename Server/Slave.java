@@ -18,5 +18,18 @@ public interface Slave extends BulletinBoard, Remote
 
     Article getLocalArticle(int id) throws RemoteException, NotFound404Exception;
 
-    List<Article> getLocalArticles() throws RemoteException;
+    List<Article> getLocalArticles(int offset) throws RemoteException;
+
+    /**
+     * Sync articles with another node. After this method returns,
+     * the caller's and callee's state should be in sync.
+     * @param node node with which to sync.
+     */
+    void sync(Slave node) throws RemoteException;
+
+    /**
+     * Returns all articles known by this slave. Used in {@link #sync(Slave)} in order
+     * to insert missing articles into the database.
+     */
+    List<Article> getAllArticles() throws RemoteException;
 }
