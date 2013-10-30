@@ -97,6 +97,5 @@ public abstract class Node implements Slave
             // Thus, wrap message in a serializable runtimeException without a cause.
             throw new RuntimeException("Couldn't read articles: " + e.getMessage());
         }
-
     }
 }

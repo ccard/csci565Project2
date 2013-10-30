@@ -150,7 +150,11 @@ public class MasterServer extends Node implements Master
     {
         long start = System.nanoTime();
         final CountDownLatch latch = new CountDownLatch(minSuccesses);
-        for (final Slave node : nodes)
+
+        // balance load across cluster by shuffling nodes.
+        List<Slave> shuffledNodes = Lists.newArrayList(nodes);
+        Collections.shuffle(shuffledNodes);
+        for (final Slave node : shuffledNodes)
         {
             executorService.submit(new Runnable()
             {
