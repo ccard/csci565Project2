@@ -2,6 +2,7 @@ package Server;
 
 import Domain.Article;
 import Shared.ArticleStore;
+import Domain.NotFound404Exception;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.skife.jdbi.v2.DBI;
@@ -56,7 +57,7 @@ public abstract class Node implements Slave
      * @throws RemoteException if an article with specified id is not found.
      */
     @Override
-    public Article getLocalArticle(int id) throws RemoteException
+    public Article getLocalArticle(int id) throws RemoteException,NotFound404Exception
     {
         log.debug("fetching article {} locally...", id);
         Article article;
@@ -73,7 +74,7 @@ public abstract class Node implements Slave
         if (null == article)
         {
             log.info("Article {} not found locally...", id);
-            throw new RemoteException("404 not found");
+            throw new NotFound404Exception("404 Article not found");
         }
         log.info("Retrieved article {} locally.", id);
         return article;

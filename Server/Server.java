@@ -137,6 +137,6 @@ public class Server
             log.info("Master started at {}:{}", host, port);
         }
 
-        System.out.println("EOF");
+        System.err.println("EOF");
 	}
 }

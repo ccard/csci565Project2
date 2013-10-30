@@ -2,6 +2,7 @@ package Server;
 
 import Domain.Article;
 import Domain.BulletinBoard;
+import Domain.NotFound404Exception;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -15,7 +16,7 @@ public interface Slave extends BulletinBoard, Remote
 {
     void replicateWrite(Article article) throws RemoteException;
 
-    Article getLocalArticle(int id) throws RemoteException;
+    Article getLocalArticle(int id) throws RemoteException, NotFound404Exception;
 
     List<Article> getLocalArticles(int offset) throws RemoteException;
 

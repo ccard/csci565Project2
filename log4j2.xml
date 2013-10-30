@@ -2,7 +2,7 @@
 <Configuration>
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
-            <PatternLayout pattern="%highlight{%d %c{1} [%t] %-5level: %msg%n%throwable}"/>
+            <PatternLayout pattern="%d %c{1} [%t] %-5level: %msg%n%throwable"/>
         </Console>
     </Appenders>
     <Loggers>

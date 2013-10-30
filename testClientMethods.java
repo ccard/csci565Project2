@@ -18,8 +18,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 //import org.apache.logging.log4j.Logger;
 
 /**
- * @Author Chris card, Steven Rupert
- * This mehtod runs test on the clients interaction with the server
+ * @author Chris card, Steven Rupert
+ * This method runs test on the clients interaction with the server
  * because if the client fails then we know that the servers failed
  *
  * This is only tested with 3 servers and 2 clients
@@ -31,9 +31,11 @@ public class testClientMethods
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
    public static AtomicBoolean flag = new AtomicBoolean(false);
+   public ExecutorService executorService;
 
    public testClientMethods()
    {
+       executorService = Executors.newCachedThreadPool();
        serverstext = new ArrayList<String>();
        serverstext.add("master::bb136-19.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5555");
@@ -83,7 +85,7 @@ public class testClientMethods
               break;
        }
 
-       System.out.println("testPostAndChoose: pass");
+       System.out.println("---------------------------\n---testPostAndChoose: Passed\n-----------------------------");
     }
 
    /**
@@ -114,20 +116,18 @@ public class testClientMethods
                 break;
         }
 
-        for(Article a : articles)
-        {
-            System.out.println(a.content);
-        }
+        assert articles.size() > 0;
 
-        System.out.println("testListArticles: Passed");
+        System.out.println("--------------------\n---testListArticles: Passed\n---------------------------");
     }
 
     /**
     * This method tests multiple clients posting near simultaneously
     * @throws AssertionError if the test fails
     */
-   public void testPostMuliClients()throws AssertionError
+   public void testPostMultiClients()throws AssertionError
    {
+       System.out.println("testPostMultiClients:\n------------------------");
        flag.set(false);
        final Article a1,a2,a3;
        a1 = new Article("This is a post from client 1",0);
@@ -142,8 +142,11 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client1.postArticle(a1);
+                   int id = client1.postArticle(a1);
+                   Article temp = client1.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 1: Passed");
                }
                catch (Exception e)
                {
@@ -160,8 +163,11 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client2.postArticle(a2);
+                   int id = client2.postArticle(a2);
+                   Article temp = client2.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 2: Passed");
                }
                catch (Exception e)
                {
@@ -178,8 +184,11 @@ public class testClientMethods
                try
                {
                    while(!flag.get()){}
-                   client3.postArticle(a1);
+                   int id = client3.postArticle(a3);
+                   Article temp = client3.chooseArticle(id);
+                   assert temp.id == id;
                    count.countDown();
+                   System.out.println("Client 3: Passed");
                }
                catch (Exception e)
                {
@@ -196,37 +205,91 @@ public class testClientMethods
        try {
            boolean passed = count.await(3,TimeUnit.SECONDS);
            assert passed;
-           System.out.println("testPostMultiCllients: Passed");
+           System.out.println("---testPostMultiCllients: Passed\n--------------------------");
        } catch (InterruptedException e) {
            throw new AssertionError("Threads where interupted");
        }
    }
 
     /**
-     * This tests if the servers choose method works
-     * @throws AssertionError if the test fails
+     * This tests one client submitting multiple posts
+     * @throws AssertionError if failed
      */
-    public void testChooseArticle()throws AssertionError
+    public void testOneClientMultiPost() throws AssertionError
     {
-        Random rand = new Random(System.currentTimeMillis());
-        int id = 2;
-        switch (rand.nextInt(3))
+        System.out.println("testOneClientMultiPost:\n-------------------------");
+        try
         {
-            case 0:
-                Article a = client1.chooseArticle(id);
-                assert id == a.id;
-                break;
-            case 1:
-                a = client2.chooseArticle(id);
-                assert id == a.id;
-                break;
-            case 2:
-                a = client3.chooseArticle(id);
-                assert id == a.id;
-                break;
+            client2.postToAllConnected(new Article("post 1 from client2",0),new Article("post 2 from client2",0));
+        }
+        catch (Error e)
+        {
+            e.printStackTrace();
+            assert false;
+        }
+        System.out.println("---testOneClientMultiPost: Passed\n-----------------------------------");
+    }
+
+    public void runTestLoad() throws Exception
+    {
+        ArrayList<Client> clients = new ArrayList<Client>();
+
+        clients.add(client1);
+        clients.add(client2);
+        clients.add(client3);
+
+        Random rand = new Random(System.currentTimeMillis());
+
+        for (int i = 0; i < 7; i++)
+        {
+            Client temp = new Client(serverstext.get(rand.nextInt(serverstext.size())));
+            clients.add(temp);
+        }
+        final CountDownLatch count = new CountDownLatch(clients.size());
+        for (final Client c : clients)
+        {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try
+                    {
+                       int id = c.postArticle(new Article("LoadTesting",0));
+                       c.chooseArticle(id);
+                       count.countDown();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            });
         }
 
-        System.out.println("testChoosArticle: Pass");
+        final CountDownLatch count2 = new CountDownLatch(clients.size());
+        for (final Client c : clients)
+        {
+            executorService.submit(new Runnable() {
+                @Override
+                public void run() {
+                    try
+                    {
+                        c.getArticles();
+                        count2.countDown();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+
+        boolean load1 = count.await(5,TimeUnit.SECONDS);
+        boolean load2 = count2.await(5,TimeUnit.SECONDS);
+        if(load1 && load2)
+        {
+            System.out.println("-------------\nLOAD RUN FINISHED\n------------");
+        }
     }
 
     /**
@@ -391,8 +454,11 @@ public class testClientMethods
                     {
                         try
                         {
-                            node.post(articles[i], ConsistencyLevel.QUORUM);
+                            int id = node.post(articles[i], ConsistencyLevel.QUORUM);
+                            Article temp = node.choose(id, ConsistencyLevel.QUORUM);
+                            assert temp.id == id;
                             latch.countDown();
+                            System.out.println("Node Passed");
                         } catch (RemoteException e)
                         {
                             // TODO log
@@ -448,7 +514,7 @@ public class testClientMethods
    {
         try
         {
-            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args);
+            ProcessBuilder run = new ProcessBuilder("ssh",host,"cd "+path,"; ./runServer.sh "+args+" >> log"+System.currentTimeMillis()+".log");
             run.redirectErrorStream(true);
             Process p = run.start();
             BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -533,10 +599,14 @@ public class testClientMethods
        testClientMethods t = new testClientMethods();
        try
        {
+           long start = System.currentTimeMillis();
            t.testPostAndChoose();
 		   t.testListArticles();
-           t.testPostMuliClients();
-           t.testChooseArticle();
+           t.testPostMultiClients();
+           t.testOneClientMultiPost();
+           t.runTestLoad();
+           start = System.currentTimeMillis()-start;
+           System.out.println("ALL PASSED, runtime: "+start+" ms");
        }
        catch (Exception e)
        {

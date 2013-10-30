@@ -8,6 +8,7 @@ package Server;
 
 import Domain.Article;
 import Domain.ConsistencyLevel;
+import Domain.NotFound404Exception;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -74,7 +75,7 @@ public class MasterServer extends Node implements Master
             {
                 node.replicateWrite(article);
             }
-        });
+        },"<POST>");
 
         log.info("Posted article {}", id);
 
@@ -102,7 +103,7 @@ public class MasterServer extends Node implements Master
             {
                 articles.addAll(node.getLocalArticles(offset));
             }
-        });
+        },"<LIST>");
 
         log.info("Listed {} articles.", articles.size());
         return Lists.newArrayList(articles);
@@ -114,19 +115,14 @@ public class MasterServer extends Node implements Master
         // using an array so other threads can modify
         final Article[] article = new Article[1];
 
-        // ALL, NONE, or read quorum
-        int quorum =
-                level == ALL ? nodes.size() :
-                level == ONE ? 1 :
-                (int) Math.ceil(nodes.size() / 2.);
-        runOnNodes(quorum, new Task()
+        runOnNodes((int) Math.ceil((nodes.size()) / 2.), new Task()
         {
             @Override
             public void run(Slave node) throws Exception
             {
                 article[0] = node.getLocalArticle(id);
             }
-        });
+        },"<CHOOSE>");
 
         if (article[0] == null)
         {
@@ -163,7 +159,7 @@ public class MasterServer extends Node implements Master
         }, 10000, 10000);
     }
 
-    private void runOnNodes(int minSuccesses, final Task task) throws RemoteException
+    private void runOnNodes(int minSuccesses, final Task task,String method) throws RemoteException
     {
         long start = System.nanoTime();
         final CountDownLatch latch = new CountDownLatch(minSuccesses);
@@ -182,7 +178,12 @@ public class MasterServer extends Node implements Master
                     {
                         task.run(node);
                         latch.countDown();
-                    } catch (Exception e)
+                    }
+                    catch (NotFound404Exception e)
+                    {
+
+                    }
+                    catch (Exception e)
                     {
                         log.error("cluster task failed!", e);
                     }
@@ -194,7 +195,7 @@ public class MasterServer extends Node implements Master
             boolean succeeded = latch.await(5, TimeUnit.SECONDS);
             if (succeeded)
             {
-                log.info("Cluster task took {} ms", (System.nanoTime() - start) / 1000000.);
+                log.info("Method {} task took {} ms",method, (System.nanoTime() - start) / 1000000.);
             } else {
                 throw new RemoteException("cluster task timed out!");
             }
