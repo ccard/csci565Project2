@@ -1,6 +1,7 @@
 import Domain.Article;
 import Domain.BulletinBoard;
 import Domain.ConsistencyLevel;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -35,7 +36,8 @@ public class testClientMethods
 
    public testClientMethods()
    {
-       executorService = Executors.newCachedThreadPool();
+       executorService = Executors.newCachedThreadPool(
+               new ThreadFactoryBuilder().setDaemon(true).build());
        serverstext = new ArrayList<String>();
        serverstext.add("master::bb136-19.mines.edu::5555");
        serverstext.add("slave::bb136-12.mines.edu::5555");
@@ -54,7 +56,10 @@ public class testClientMethods
 
    public void stop()
    {
-        stopServers(serverstext);
+       stopServers(serverstext);
+       System.err.println("Shutting down executor threads...");
+       executorService.shutdownNow();
+       System.err.println("executor threads stopped.");
    }
 
    /**
@@ -524,6 +529,7 @@ public class testClientMethods
                 if (line.contains("EOF")) break;
                 System.out.println(line);
             }
+            b.close();
         }
         catch(Exception e)
         {
@@ -606,7 +612,7 @@ public class testClientMethods
            t.testOneClientMultiPost();
            t.runTestLoad();
            start = System.currentTimeMillis()-start;
-           System.out.println("ALL PASSED, runtime: "+start+" ms");
+           System.out.println("ALL PASSED, runtime: " + start + " ms");
        }
        catch (Exception e)
        {
@@ -617,6 +623,7 @@ public class testClientMethods
        {
            t.stop();
        }
+       System.exit(0);
    }
 }
 
