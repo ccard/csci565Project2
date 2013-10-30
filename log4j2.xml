@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration>
     <Appenders>
-        <File name="File" fileName="serverLog.log"  bufferedIO="false">
-<PatternLayout pattern="%highlight{%d %c{1} [%t] %-5level: %msg%n%throwable}"/> 
-        </File>
+        <Console name="STDOUT" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d %c{1} [%t] %-5level: %msg%n%throwable"/>
+        </Console>
     </Appenders>
     <Loggers>
         <Logger name="org.apache.log4j.xml" level="info"/>
         <Root level="debug">
-            <AppenderRef ref="File"/>
+            <AppenderRef ref="STDOUT"/>
         </Root>
     </Loggers>
 </Configuration>
