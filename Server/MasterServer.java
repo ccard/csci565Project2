@@ -201,7 +201,7 @@ public class MasterServer extends Node implements Master
             boolean succeeded = latch.await(5, TimeUnit.SECONDS);
             if (succeeded)
             {
-                log.info("Method {} task took {} ms",method, (System.nanoTime() - start) / 1000000.);
+                log.info("Method {} task took {} ms {}",method, (System.nanoTime() - start) / 1000000.,minSuccesses);
             } else {
                 throw new RemoteException("cluster task timed out!");
             }
