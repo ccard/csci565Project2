@@ -57,8 +57,10 @@ The first consistency model that the *master* uses is *Sequential consistency* m
 servers will see the articles in the same order as any other *client* reading from any of the other servers. The second consistency model that
 the master uses is *Quorum consistency* which uses a set of the servers, *master* included, as a read quorum *Nr* and a write quorum *Nw* that follow
 these constraints:
+
 1. *Nr*+*Nw* > *N*
 2. *Nw* > *N*/2
+
 Quorum consistency ensures consistency by asking the read quorum(*Nr*) for articles when a read is requested or by writing to the 
 write quorum(*Nw*) when a write is requested. The third type of consistency we use is *Read-your-Writes consistency* using local write protocol, 
 this consistency model ensures that if a *client* writes to one server and then contacts another that it is guaranteed to read the article it just
