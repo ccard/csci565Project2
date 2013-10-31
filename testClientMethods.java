@@ -298,6 +298,7 @@ public class testClientMethods
 
         Thread.sleep(5000);
         running.set(false);
+        Thread.sleep(100);
         System.out.println("-------------\nLOAD RUN FINISHED\n------------");
 
         int numPosts = 0, numRead = 0, numList = 0;
@@ -313,8 +314,12 @@ public class testClientMethods
         }
 
         latencies.put("POST", latencies.get("POST")/numPosts);
-        latencies.put("POST", latencies.get("LIST")/numList);
-        latencies.put("READ", latencies.get("READ")/numRead);
+        latencies.put("LIST", latencies.get("LIST")/numList);
+        latencies.put("CHOOSE", latencies.get("CHOOSE")/numRead);
+
+        System.out.println("Number of choose: "+numRead);
+        System.out.println("Number of lists: "+numList);
+        System.out.println("Number of posts: " + numPosts + "\n");
 
         return latencies;
     }
@@ -613,7 +618,7 @@ public class testClientMethods
             if (master.isEmpty() && params[0].compareTo("master") == 0)
             {
                 master = params[1]+":"+params[2];
-                startServer(path,params[1],"-s "+params[2]+" -master");
+                startServer(path,params[1],"-s "+params[2]+" -master -in-memory");
             }
             else if (master.isEmpty())
             {
@@ -623,7 +628,7 @@ public class testClientMethods
 
             if (params[0].compareTo("slave") == 0)
             {
-                startServer(path,params[1],"-s "+params[2]+" -slave -mhost "+master);
+                startServer(path,params[1],"-s "+params[2]+" -slave -mhost "+master+" -in-memory");
             }
         }
     }
@@ -667,8 +672,13 @@ public class testClientMethods
 		   t.testListArticles();
            t.testPostMultiClients();
            t.testOneClientMultiPost();
-           t.runTestLoad();
-           //TODO implement load scaleing tests
+
+           Map<String, Double> latencies = t.runTestLoad(Integer.parseInt(args.length == 1 ? "10" : args[0]));
+           System.out.println("Operation,latency");
+           for (Map.Entry<String, Double> entry : latencies.entrySet()) {
+               System.out.println(entry.getKey()+","+entry.getValue());
+           }
+
            start = System.currentTimeMillis()-start;
            System.out.println("ALL PASSED, runtime: " + start + " ms");
        }
