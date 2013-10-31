@@ -305,12 +305,16 @@ public class testClientMethods
    {
         private ArrayList<BulletinBoard> servers;
         private ExecutorService executorService;
+        private ArrayList<Long> latread,latpost,latlist;
         /**
          * This is the constructor and it takes a list of strings
          * @param b List of strings of the servers to connect to
          */
         public Client(String... b)
         {
+           latread = new ArrayList<Long>();
+           latpost = new ArrayList<Long>();
+           latlist = new ArrayList<Long>();
            servers = new ArrayList<BulletinBoard>();
            executorService = Executors.newCachedThreadPool();
            for (int i = 0; i < b.length; i++)
@@ -349,6 +353,19 @@ public class testClientMethods
             return null;
         }
 
+       /**
+        * This method returns latencies for post read and list operations
+        * @return Map containing key<operation> and value <latencies of operation>
+        */
+        public Map<String,ArrayList<Long>> getLatencies()
+        {
+            Map<String,ArrayList<Long>> ret = new HashMap<String, ArrayList<Long>>();
+            ret.put("POST",latpost);
+            ret.put("LIST",latlist);
+            ret.put("CHOOSE",latread);
+            return ret;
+        }
+
         /**
          * Checks the number of servers it is connected to
          * @return true if it is connected to more than 1
@@ -366,13 +383,16 @@ public class testClientMethods
          */
         public int postArticle(Article a) throws AssertionError
         {
+            long start = System.currentTimeMillis();
             Random rand = new Random(System.currentTimeMillis());
 
             int choice = rand.nextInt(servers.size());
 
             try
             {
-                return servers.get(choice).post(a, ConsistencyLevel.QUORUM);
+                int id = servers.get(choice).post(a, ConsistencyLevel.QUORUM);
+                latpost.add(System.currentTimeMillis()-start);
+                return id;
             }
             catch (RemoteException e)
             {
@@ -391,6 +411,7 @@ public class testClientMethods
          */
         public Article chooseArticle(int i) throws AssertionError
         {
+            long start = System.currentTimeMillis();
             Random rand = new Random(System.currentTimeMillis());
 
             int choice = rand.nextInt(servers.size());
@@ -398,6 +419,7 @@ public class testClientMethods
             try
             {
                 ret = servers.get(choice).choose(i, ConsistencyLevel.QUORUM);
+                latread.add(System.currentTimeMillis()-start);
             }
             catch (Exception e)
             {
@@ -415,6 +437,7 @@ public class testClientMethods
          */
         public List<Article> getArticles() throws AssertionError
         {
+            long start = System.currentTimeMillis();
             Random rand = new Random(System.currentTimeMillis());
 
             int choice = rand.nextInt(servers.size());
@@ -424,6 +447,7 @@ public class testClientMethods
             try
             {
                ret = servers.get(choice).getArticles(0, ConsistencyLevel.QUORUM);
+               latlist.add(System.currentTimeMillis()-start);
             }
             catch (Exception e)
             {
