@@ -38,7 +38,23 @@ Authors: Chris Card, Steven Ruppert
 
 ## Design
 
-TODO
+ Our destributed forum is designed aroud a client/server java rmi model. The client will contact one of the 
+servers, it can be any slave or even the master/coordinator, and send a request to it.  The servers will then
+perform necessary interactions to reterive the most up to date articles or post an article with a unique id.
+Most of the concistency and overall functionality of the system is hosted on the servers(fat server) with some caching on
+the client side (thin client).
+
+### Servers
+
+  Our servers are split into two categories *Master/Coordinator* and *Slave*.  Our *Master* node is determined at startup and is
+not elected this simplifies our design but creates a single point of failure in our system. The *Slave* servers register them
+selves with the master node when they start this allows us to dynamically add and remove *Slave* servers (How ever this was not
+implemented) and doesn't require the *Master* to know anything about the slaves until they start.
+  The *Master/Coordinator* server is the centeral hinge to our system and is responsible for the consistency of the system and ensuring
+that all *Client* requests either (1) get the most uptodate versions of the articles or (2) post an article that has a unique id and will
+eventually be seen by all servers. To accomplish this eventual consistency we implement three types of modles (*To be determined by the client*).
+The first consistency modle that we 
+
 
 ## Running
 
