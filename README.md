@@ -2,8 +2,8 @@
 
 Authors: Chris Card, Steven Ruppert
 
-This project is a implementation of a simple distributed Bulletin 
-Board (key-value store) with a Cassandra-like 
+This project is a implementation of a simple distributed Bulletin
+Board (key-value store) with a Cassandra-like
 client-specified consistency model. See the [design](#Design)
 section for more details.
 
@@ -124,6 +124,14 @@ simultaneously resulted in the following latencies
 at **QUORUM** writes and **QUORUM** reads:
 
 ![quorum -- average operation time](Average operation time.png)
+
+A more thourough test was conducted to study the scaling characteristics of
+various consistency modes. 3 servers running on 2 separate machines in the
+alamode linux lab were load tested with a number of clients performing
+simultaneous POST, CHOOSE, and LIST operations for 5 seconds at
+a specified consistency mode. The average latency per operation is graphed below:
+
+TODO
 
 ## Running
 
