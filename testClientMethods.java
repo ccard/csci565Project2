@@ -379,8 +379,7 @@ public class testClientMethods
                 port = Integer.parseInt(socket);
 
                 Registry reg = LocateRegistry.getRegistry(host,port);
-                BulletinBoard comp = (BulletinBoard)reg.lookup("BulletinBoard");
-                return comp;
+                return (BulletinBoard)reg.lookup("BulletinBoard");
             }
             catch (Exception e)
             {
