@@ -113,7 +113,7 @@ Write failures indicate only that the required number of nodes did not respond
 in a reasonable time interval (5 seconds)--the write
 still could have happened on a number of nodes, and due to the append-only
 nature of the bulletin-board, the failed article
-could still potentially appear in future reads after the backround **sync**
+could still potentially appear in future reads after the background **sync**
 task runs. Clients who retry failed requests can
 thus potentially create articles with duplicate content.
 
@@ -125,11 +125,24 @@ at **QUORUM** writes and **QUORUM** reads:
 
 ![quorum -- average operation time](Average operation time.png)
 
-A more thourough test was conducted to study the scaling characteristics of
+A more thorough test was conducted to study the scaling characteristics of
 various consistency modes. 3 servers running on 2 separate machines in the
 alamode linux lab were load tested with a number of clients performing
 simultaneous POST, CHOOSE, and LIST operations for 5 seconds at
-a specified consistency mode. The average latency per operation is graphed below:
+a specified consistency mode. Server nodes used in-memory databases to
+eliminate disk write latency as a factor.
+
+The average latency per operation is graphed below:
+
+
+Note that the POST latency for ALL consistency is significantly lower than
+QUORUM or ONE consistency, which doesn't make intuitive sense. We believe this
+is because we are reporting the *average* latency per operation, which is sensitive
+to outliers. The non-ALL modes still broadcast writes to all nodes, so the writes
+that are broadcast and not waited upon by the master server will "bunch up" causing
+a much larger spread in latency values for ONE and QUORUM consistencies, bringing up the
+average latency. A measure of median would probably more accurately gauge the performance
+differences between the consistency modes.
 
 TODO
 
