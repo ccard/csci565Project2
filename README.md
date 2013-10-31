@@ -39,21 +39,30 @@ Authors: Chris Card, Steven Ruppert
 ## Design
 
  Our destributed forum is designed aroud a client/server java rmi model. The client will contact one of the 
-servers, it can be any slave or even the master/coordinator, and send a request to it.  The servers will then
+servers, it can be any *slave* or even the *master/coordinator*, and send a request to it.  The servers will then
 perform necessary interactions to reterive the most up to date articles or post an article with a unique id.
 Most of the concistency and overall functionality of the system is hosted on the servers(fat server) with some caching on
 the client side (thin client).
 
 ### Servers
 
-  Our servers are split into two categories *Master/Coordinator* and *Slave*.  Our *Master* node is determined at startup and is
-not elected this simplifies our design but creates a single point of failure in our system. The *Slave* servers register them
-selves with the master node when they start this allows us to dynamically add and remove *Slave* servers (How ever this was not
-implemented) and doesn't require the *Master* to know anything about the slaves until they start.
-  The *Master/Coordinator* server is the centeral hinge to our system and is responsible for the consistency of the system and ensuring
-that all *Client* requests either (1) get the most uptodate versions of the articles or (2) post an article that has a unique id and will
+  Our servers are split into two categories *Master/Coordinator* and *Slave*.  Our *master* node is determined at startup and is
+not elected this simplifies our design but creates a single point of failure in our system. The *slave* servers register them
+selves with the master node when they start this allows us to dynamically add and remove *slave* servers (How ever this was not
+implemented) and doesn't require the *master* to know anything about the slaves until they start.
+   <p>The *Master/Coordinator* server is the centeral hinge to our system and is responsible for the consistency of the system and ensuring
+that all *Client* requests either (*1*) get the most uptodate versions of the articles or (*2*) post an article that has a unique id and will
 eventually be seen by all servers. To accomplish this eventual consistency we implement three types of modles (*To be determined by the client*).
-The first consistency modle that we 
+The first consistency model that the *master* uses is *Sequential consistency* model which ensures that any *client* reading from any of the
+servers will see the articles in the same order as any other *client* reading from any of the other servers. The second consistency model that
+the master uses is *Quorum consistency* which uses a set of the servers, *master* included, as a read quorum *Nr* and a write quorum *Nw* that follow
+these constraints:
+1. *Nr*+*Nw* > *N*
+2. *Nw* > *N*/2
+Quorum consistency ensures consistency by asking the read quorum(*Nr*) for articles when a read is requested or by writing to the 
+write quorum(*Nw*) when a write is requested. The third type of consistency we use is *Read-your-Writes consistency* using local write protocol, 
+this consistency model ensures that if a *client* writes to one server and then contacts another that it is guaranteed to read the article it just
+posted.  This is accomplished through </p>
 
 
 ## Running
