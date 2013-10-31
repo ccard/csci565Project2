@@ -611,6 +611,7 @@ public class testClientMethods
            t.testPostMultiClients();
            t.testOneClientMultiPost();
            t.runTestLoad();
+           //TODO implement load scaleing tests
            start = System.currentTimeMillis()-start;
            System.out.println("ALL PASSED, runtime: " + start + " ms");
        }
