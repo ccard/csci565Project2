@@ -235,8 +235,13 @@ public class testClientMethods
         System.out.println("---testOneClientMultiPost: Passed\n-----------------------------------");
     }
 
-    public void runTestLoad() throws Exception
+    public Map<String, Double> runTestLoad(int numClients) throws Exception
     {
+        Map<String, Double> latencies = new HashMap<String, Double>();
+        latencies.put("POST",0.0);
+        latencies.put("LIST",0.0);
+        latencies.put("CHOOSE",0.0);
+        final AtomicBoolean running = new AtomicBoolean(true);
         ArrayList<Client> clients = new ArrayList<Client>();
 
         clients.add(client1);
@@ -245,56 +250,84 @@ public class testClientMethods
 
         Random rand = new Random(System.currentTimeMillis());
 
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < (numClients-3); i++)
         {
             Client temp = new Client(serverstext.get(rand.nextInt(serverstext.size())));
             clients.add(temp);
         }
-        final CountDownLatch count = new CountDownLatch(clients.size());
+
         for (final Client c : clients)
         {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    try
+                    while(running.get())
                     {
-                       int id = c.postArticle(new Article("LoadTesting",0));
-                       c.chooseArticle(id);
-                       count.countDown();
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
+                        try
+                        {
+                            int id = c.postArticle(new Article("LoadTesting",0));
+                            c.chooseArticle(id);
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
         }
 
-        final CountDownLatch count2 = new CountDownLatch(clients.size());
         for (final Client c : clients)
         {
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
-                    try
-                    {
-                        c.getArticles();
-                        count2.countDown();
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
+                    while (running.get()) {
+                        try
+                        {
+                            c.getArticles();
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
                     }
                 }
             });
         }
 
-        boolean load1 = count.await(5,TimeUnit.SECONDS);
-        boolean load2 = count2.await(5,TimeUnit.SECONDS);
-        if(load1 && load2)
+        Thread.sleep(5000);
+        running.set(false);
+        System.out.println("-------------\nLOAD RUN FINISHED\n------------");
+
+        int numPosts = 0, numRead = 0, numList = 0;
+        for(Client c : clients)
         {
-            System.out.println("-------------\nLOAD RUN FINISHED\n------------");
+            Map<String, ArrayList<Long>> lat = c.getLatencies();
+            numPosts += lat.get("POST").size();
+            numList += lat.get("LIST").size();
+            numRead += lat.get("CHOOSE").size();
+            latencies.put("POST",latencies.get("POST")+sum(lat.get("POST")));
+            latencies.put("LIST",latencies.get("LIST")+sum(lat.get("LIST")));
+            latencies.put("CHOOSE",latencies.get("CHOOSE")+sum(lat.get("CHOOSE")));
         }
+
+        latencies.put("POST", latencies.get("POST")/numPosts);
+        latencies.put("POST", latencies.get("LIST")/numList);
+        latencies.put("READ", latencies.get("READ")/numRead);
+
+        return latencies;
+    }
+
+
+    private long sum(List<Long> nums)
+    {
+        long sum = 0;
+        for(long l : nums)
+        {
+            sum += l;
+        }
+        return sum;
     }
 
     /**
