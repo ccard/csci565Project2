@@ -87,7 +87,7 @@ write modes:
 
 - **Sequential Consistency** - Write **ALL** and read **ONE**.
 - **Quorum Consistency** - Write **QUORUM** and read **QUORUM**.
-- **Read-your-writes Consistency** - Write **ONE** and **ONE**, with the
+- **Read-your-writes Consistency** - Write **ONE** and read **ONE**, with the
   client's local database enabled.
 
 Note that operations are still broadcast to all nodes regardless of the client.

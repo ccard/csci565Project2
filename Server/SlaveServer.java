@@ -28,12 +28,13 @@ public class SlaveServer extends Node
 	private Master master;
 
     /**
-	* @param masterName string of the form of <masterhostname>:<mastersocket>
-	* @param databaseName local database name to use.
-	*/
-	public SlaveServer(String masterName, String databaseName)
+	 * @param masterName string of the form of <masterhostname>:<mastersocket>
+	 * @param databaseName local database name to use.
+     * @param inMemory whether to use an in memory local database or a persistent database.
+	 */
+	public SlaveServer(String masterName, String databaseName, boolean inMemory)
     {
-        super(databaseName.replace(':', '_'));
+        super(databaseName.replace(':', '_'), inMemory);
 
         identifier = databaseName;
         this.masterName = masterName;

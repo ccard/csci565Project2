@@ -22,10 +22,10 @@ public abstract class Node implements Slave
 
     protected final ArticleStore articleStore;
 
-    public Node(String databaseName)
+    public Node(String databaseName, boolean inMemory)
     {
         // connect to embedded article database
-        DBI dbi = new DBI("jdbc:h2:dbs/" + databaseName);
+        DBI dbi = new DBI(inMemory ? "jdbc:h2:dbs;DB_CLOSE_DELAY=-1" : "jdbc:h2:dbs/" + databaseName);
         articleStore = dbi.onDemand(ArticleStore.class);
         articleStore.initializeTable();
         articleStore.initializeCountTable();
