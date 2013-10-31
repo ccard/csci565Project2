@@ -28,13 +28,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class testClientMethods
 {
-  // private static Logger log = LogManager.getLogger();
+    private final ConsistencyLevel level = ConsistencyLevel.ONE;
+    // private static Logger log = LogManager.getLogger();
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
    public static AtomicBoolean flag = new AtomicBoolean(false);
    public ExecutorService executorService;
 
-   public testClientMethods()
+    public testClientMethods()
    {
        executorService = Executors.newCachedThreadPool(
                new ThreadFactoryBuilder().setDaemon(true).build());
@@ -44,9 +45,9 @@ public class testClientMethods
        serverstext.add("slave::bb136-12.mines.edu::5556");
        serverstext.add("slave::bb136-13.mines.edu::5555");
        start();
-       client1 = new Client(serverstext.get(2));
-       client2 = new Client(serverstext.get(0),serverstext.get(3));
-       client3 = new Client(serverstext.get(1));
+       client1 = new Client(level, serverstext.get(2));
+       client2 = new Client(level, serverstext.get(0),serverstext.get(3));
+       client3 = new Client(level, serverstext.get(1));
    }
 
    private void start()
@@ -252,7 +253,7 @@ public class testClientMethods
 
         for (int i = 0; i < (numClients-3); i++)
         {
-            Client temp = new Client(serverstext.get(rand.nextInt(serverstext.size())));
+            Client temp = new Client(level, serverstext.get(rand.nextInt(serverstext.size())));
             clients.add(temp);
         }
 
@@ -266,7 +267,6 @@ public class testClientMethods
                         try
                         {
                             int id = c.postArticle(new Article("LoadTesting",0));
-                            c.chooseArticle(id);
                         }
                         catch (Exception e)
                         {
@@ -285,7 +285,10 @@ public class testClientMethods
                     while (running.get()) {
                         try
                         {
-                            c.getArticles();
+                            List<Article> arts = c.getArticles();
+                            if (arts.size() > 0) {
+                                c.chooseArticle(arts.get(0).id);
+                            }
                         }
                         catch (Exception e)
                         {
@@ -344,12 +347,16 @@ public class testClientMethods
         private ArrayList<BulletinBoard> servers;
         private ExecutorService executorService;
         private ArrayList<Long> latread,latpost,latlist;
+        public ConsistencyLevel level;
+
         /**
          * This is the constructor and it takes a list of strings
+         * @param level
          * @param b List of strings of the servers to connect to
          */
-        public Client(String... b)
+        public Client(ConsistencyLevel level, String... b)
         {
+           this.level = level;
            latread = new ArrayList<Long>();
            latpost = new ArrayList<Long>();
            latlist = new ArrayList<Long>();
@@ -403,14 +410,6 @@ public class testClientMethods
             return ret;
         }
 
-        /**
-         * Checks the number of servers it is connected to
-         * @return true if it is connected to more than 1
-         */
-        public boolean connectedToMultiple()
-        {
-            return servers.size() > 1;
-        }
 
         /**
          * This posts an article to the server if the client is connected
@@ -427,7 +426,7 @@ public class testClientMethods
 
             try
             {
-                int id = servers.get(choice).post(a, ConsistencyLevel.QUORUM);
+                int id = servers.get(choice).post(a, level);
                 latpost.add(System.currentTimeMillis()-start);
                 return id;
             }
@@ -455,7 +454,7 @@ public class testClientMethods
             Article ret = null;
             try
             {
-                ret = servers.get(choice).choose(i, ConsistencyLevel.QUORUM);
+                ret = servers.get(choice).choose(i, level);
                 latread.add(System.currentTimeMillis()-start);
             }
             catch (Exception e)
@@ -483,7 +482,7 @@ public class testClientMethods
 
             try
             {
-               ret = servers.get(choice).getArticles(0, ConsistencyLevel.QUORUM);
+               ret = servers.get(choice).getArticles(0, level);
                latlist.add(System.currentTimeMillis()-start);
             }
             catch (Exception e)
@@ -520,8 +519,8 @@ public class testClientMethods
                     {
                         try
                         {
-                            int id = node.post(articles[i], ConsistencyLevel.QUORUM);
-                            Article temp = node.choose(id, ConsistencyLevel.QUORUM);
+                            int id = node.post(articles[i], level);
+                            Article temp = node.choose(id, level);
                             assert temp.id == id;
                             latch.countDown();
                             System.out.println("Node Passed");
@@ -672,11 +671,11 @@ public class testClientMethods
            t.testPostMultiClients();
            t.testOneClientMultiPost();
 
-           Map<String, Double> latencies = t.runTestLoad(Integer.parseInt(args.length == 1 ? "10" : args[0]));
-           System.out.println("Operation,latency");
-           for (Map.Entry<String, Double> entry : latencies.entrySet()) {
-               System.out.println(entry.getKey()+","+entry.getValue());
-           }
+//           Map<String, Double> latencies = t.runTestLoad(Integer.parseInt(args.length == 1 ? "10" : args[0]));
+//           System.out.println("Operation,latency");
+//           for (Map.Entry<String, Double> entry : latencies.entrySet()) {
+//               System.out.println(entry.getKey()+","+entry.getValue());
+//           }
 
            start = System.currentTimeMillis()-start;
            System.out.println("ALL PASSED, runtime: " + start + " ms");

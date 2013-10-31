@@ -116,7 +116,12 @@ public class MasterServer extends Node implements Master
         // using an array so other threads can modify
         final Article[] article = new Article[1];
 
-        runOnNodes((int) Math.ceil((nodes.size()) / 2.), new Task()
+        int quorum =
+                level == ALL ? nodes.size() :
+                        level == ONE ? 1 :
+                                (int) Math.ceil(nodes.size() / 2.);
+
+        runOnNodes(quorum, new Task()
         {
             @Override
             public void run(Slave node) throws Exception
