@@ -107,21 +107,32 @@ public class Server
 	}
 
 	/**
-	* @param args list of arguments in the following format
-	*     -s <socket> "Provides the socket number"
-	*	  -master (only when instantiating the master server)
-	* 	  -slave (only when instantiating the slave server)
-	*	  -mhost <Master host name>:<socket> (only used if not the master node)
-	*/
+	 * @param args list of arguments in the following format
+	 *     -s <socket> "Provides the socket number"
+	 *	  -master (only when instantiating the master server)
+	 * 	  -slave (only when instantiating the slave server)
+	 *	  -mhost <Master host name>:<socket> (only used if not the master node)
+     *	  -in-memory (if present, an in-memory rather than persistent database is used.)
+	 */
 	public static void main(String[] args) throws Throwable
 	{
         int port  = socket(args);
         boolean master = isMaster(args);
         String host = getHost();
+        boolean inMemory = false;
+        for (String arg : args)
+        {
+            if ("-in-memory".equals(arg))
+            {
+                inMemory = true;
+                break;
+            }
+        }
+
         //TODO: Allow user to choose sequential or quorum concistency
         BulletinBoard engine =
-                (master ? new MasterServer(host + "_" + port)
-                        : new SlaveServer(getMasterName(args), host + ":" + port));
+                (master ? new MasterServer(host + "_" + port, inMemory)
+                        : new SlaveServer(getMasterName(args), host + ":" + port, inMemory));
 
         BulletinBoard stub = (BulletinBoard) UnicastRemoteObject.exportObject(engine,0);
 

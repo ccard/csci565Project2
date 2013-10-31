@@ -35,10 +35,11 @@ public class MasterServer extends Node implements Master
     /**
      * Constructs a new MasterServer instance.
      * @param databaseName local database file name to use.
+     * @param inMemory whether to use an in memory local database or a persistent database.
      */
-	public MasterServer(String databaseName)
+	public MasterServer(String databaseName, boolean inMemory)
     {
-        super(databaseName);
+        super(databaseName, inMemory);
 
         nodes = Collections.synchronizedList(new ArrayList<Slave>());
         // caution, leaks incomplete "this" reference, but I think we should be fine here
