@@ -2,6 +2,11 @@
 
 Authors: Chris Card, Steven Ruppert
 
+This project is a implementation of a simple distributed Bulletin 
+Board (key-value store) with a Cassandra-like 
+client-specified consistency model. See the [design](#Design)
+section for more details.
+
 ## Files:
 
 - Server/:
@@ -38,54 +43,87 @@ Authors: Chris Card, Steven Ruppert
 
 ## Design
 
- Our destributed forum is designed aroud a client/server java rmi model. The client will contact one of the 
-servers, it can be any *slave* or even the *master/coordinator*, and send a request to it.  The servers will then
-perform necessary interactions to reterive the most up to date articles or post an article with a unique id.
-Most of the concistency and overall functionality of the system is hosted on the servers(fat server) with some caching on
-the client side (thin client).
+Bulletin board state is distributed among a cluster of individual server
+processes which store local state in a persistent disk-backed RDBMS. A single
+**master** server coordinates client operations throughout the cluster and
+keeps track servers within the cluster. **Slave** servers replicate article
+reads and writes from the master, and register themselves with the master
+server upon startup. Slave nodes only communicate with the master server
+directly. Thus, the system can scale by adding slave nodes registered with the
+same master.
 
-### Servers
+**Clients** connect to one of the servers (either master or slave) upon startup
+and issue commands (LIST, POST, CHOOSE). Clients also optionally keep local
+persistent copies of articles successfully committed to the cluster in order to
+ensure read-your-writes consistency even with non-quorum writes and reads.
 
-  Our servers are split into two categories *Master/Coordinator* and *Slave*.  Our *master* node is determined at startup and is
-not elected this simplifies our design but creates a single point of failure in our system. The *slave* servers register them
-selves with the master node when they start this allows us to dynamically add and remove *slave* servers (How ever this was not
-implemented) and doesn't require the *master* to know anything about the slaves until they start.
-   <p>The *Master/Coordinator* server is the centeral hinge to our system and is responsible for the consistency of the system and ensuring
-that all *Client* requests either (*1*) get the most uptodate versions of the articles or (*2*) post an article that has a unique id and will
-eventually be seen by all servers. To accomplish this eventual consistency we implement three types of modles (*To be determined by the client*).
-The first consistency model that the *master* uses is *Sequential consistency* model which ensures that any *client* reading from any of the
-servers will see the articles in the same order as any other *client* reading from any of the other servers. The second consistency model that
-the master uses is *Quorum consistency* which uses a set of the servers, *master* included, as a read quorum *Nr* and a write quorum *Nw* that follow
-these constraints:
+### Read/Write Replication
 
-1. *Nr*+*Nw* > *N*
-2. *Nw* > *N*/2
+Client reads/writes are coordinated by the master server. If a client sends
+operations to a slave server, the operations are passed through to the master
+for execution. This centralized design simplifies coordination as well as
+allowing the master to impose a global ordering
+on article writes through monotonically increasing numeric ids.
 
-Quorum consistency ensures consistency by asking the read quorum(*Nr*) for articles when a read is requested or by writing to the 
-write quorum(*Nw*) when a write is requested. The third type of consistency we use is *Read-your-Writes consistency* using local write protocol, 
-this consistency model ensures that if a *client* writes to one server and then contacts another that it is guaranteed to read the article it just
-posted. This is accomplished through the local write protocol which means the *client* not only writes to the server but also caches the write locally. 
-The *master/coordinator* is responsible not only for the consistency of the system but also providing unique ids for the articles. The *master* provides 
-the unique ids through an inline *JDBI* database, this database also provides some concurrent access control so a race condition doesn't occur.</p>
- The *slave* server servs *client's* read and write request to the forum and maintain local store of all the articles, this store is periodically 
-syncronized with all other servers by the *master*. Though the *slave* server maintains a local store of articles it must rely on the *master* to generate 
-the unique id of the article which means that the *master* server always has the most recent store of articles.
+When the master server receives a client operation (read/write), the operation
+is broadcast to all nodes in the cluster, which perform the
+operation locally and return the results to the master. Depending on the
+consistency and performance needs of the client,
+the master will wait for a certain subset of cluster nodes to return before
+returning the aggregated result to the client.
 
-### Client
+The number of nodes for which the master will wait is specified by the client
+as one of:
 
-  The *client* will first connect to a server, can either be the *master* or a *slave* doesn't matter which one, it will then make a request either *POST*, *LIST* or *CHOOSE*. 
-The servers will then reply accordingly. For *LIST* and *CHOOSE* requests the servers will either return the articles or the server will through a *NotFound404Exception* if there 
-are no articles or if it couldn't find the article. For a *POST* request the server will return the articles id or it will throw an exception if it could not write the 
-article to the servers.
+- **ALL**: the master will wait for *all* nodes in the cluster to respond.
+- **QUORUM**: for write operations, the master will wait for `N / 2 + 1` nodes
+  (of `N`), or `N / 2` for read operations.
+- **ONE**: the master will return after the first node responds.
 
-### Results
+The semantics of these consistency modes are modeled after [Cassandra's
+consistency modes][0]. With these semantics, the classical models of
+consistency can thus be achieved by using the correct combination of read and
+write modes:
 
-  The following graph (follow the link) is the generated by our benchmark test.  In our benchmark we have 4 servers running, the master syncronizes every 2 seconds, and we have 10 clients running 
-simultaneously. The graph represents the average operation time for a quorum based consistency model
+- **Sequential Consistency** - Write **ALL** and read **ONE**.
+- **Quorum Consistency** - Write **QUORUM** and read **QUORUM**.
+- **Read-your-writes Consistency** - Write **ONE** and **ONE**, with the
+  client's local database enabled.
 
-![average operation time](Average operation time.png?raw=true)
+Note that operations are still broadcast to all nodes regardless of the client.
+Thus, during normal operation,
+all writes are replicated fully across the cluster and reads are performed on
+all nodes (even though some results
+will be ignored at non-ALL consistency modes). Transient node failures and
+network partitions are repaired by
+a periodic **sync** task that fully copies the master node's state to each
+slave.
 
+[0]: http://www.datastax.com/documentation/cassandra/2.0/webhelp/index.html#cassandra/dml/dml_config_consistency_c.html
 
+### Failure Modes
+
+No automatic fault-detection or recovery is performed by the system. On master
+failure, the slave nodes will eventually stop. On
+slave failure, the master node will continue to operate at reduced consistency
+modes (QUORUM or ONE) as long as there are enough
+nodes left.
+
+Write failures indicate only that the required number of nodes did not respond
+in a reasonable time interval (5 seconds)--the write
+still could have happened on a number of nodes, and due to the append-only
+nature of the bulletin-board, the failed article
+could still potentially appear in future reads after the backround **sync**
+task runs. Clients who retry failed requests can
+thus potentially create articles with duplicate content.
+
+## Benchmarks
+
+A load test with 4 server nodes and 10 clients performing operations
+simultaneously resulted in the following latencies
+at **QUORUM** writes and **QUORUM** reads:
+
+![quorum -- average operation time](Average operation time.png)
 
 ## Running
 
@@ -134,9 +172,13 @@ Run `client.sh` without options for documentation and example usage.
 
 ### Run Tests
 
+Boots up a 3 node cluster and outputs the results of consistency tests:
+
     ./runTests.sh
 
-This will print out success if the tests pass other wise it will throw an error
-This will also run the benchmark for the system then run `./getStats.rb <output csv filename>`
-to get a csv file of the stats of all operations
+`runTests.sh` additionally runs the load test for the syste. Run:
 
+    ./getStats.rb <output csv filename>
+
+to process the text logs produced during the load test to a `.csv` of operation
+latencies.
