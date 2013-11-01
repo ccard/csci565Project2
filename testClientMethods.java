@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class testClientMethods
 {
-    private final ConsistencyLevel level = ConsistencyLevel.ONE;
+    private final ConsistencyLevel level = ConsistencyLevel.ALL;
     // private static Logger log = LogManager.getLogger();
    private ArrayList<String> serverstext;
    private Client client1,client2,client3;
@@ -266,7 +266,7 @@ public class testClientMethods
                     {
                         try
                         {
-                            int id = c.postArticle(new Article("LoadTesting",0));
+                            c.postArticle(new Article("LoadTesting",0));
                         }
                         catch (Exception e)
                         {
@@ -459,7 +459,7 @@ public class testClientMethods
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                //e.printStackTrace();
                 throw new AssertionError("Article not found");
             }
             return ret;
@@ -662,7 +662,13 @@ public class testClientMethods
 
    public static void main(String[] args)
    {
-       testClientMethods t = new testClientMethods();
+       final testClientMethods t = new testClientMethods();
+       Runtime.getRuntime().addShutdownHook(new Thread(){
+           @Override
+           public void run() {
+               t.stop();
+           }
+       });
        try
        {
            long start = System.currentTimeMillis();
@@ -671,11 +677,11 @@ public class testClientMethods
            t.testPostMultiClients();
            t.testOneClientMultiPost();
 
-//           Map<String, Double> latencies = t.runTestLoad(Integer.parseInt(args.length == 1 ? "10" : args[0]));
-//           System.out.println("Operation,latency");
-//           for (Map.Entry<String, Double> entry : latencies.entrySet()) {
-//               System.out.println(entry.getKey()+","+entry.getValue());
-//           }
+           Map<String, Double> latencies = t.runTestLoad(Integer.parseInt(args.length == 1 ? "10" : args[0]));
+           System.out.println("Operation,latency");
+           for (Map.Entry<String, Double> entry : latencies.entrySet()) {
+               System.out.println(entry.getKey()+","+entry.getValue());
+           }
 
            start = System.currentTimeMillis()-start;
            System.out.println("ALL PASSED, runtime: " + start + " ms");
