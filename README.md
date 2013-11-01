@@ -134,6 +134,11 @@ eliminate disk write latency as a factor.
 
 The average latency per operation is graphed below:
 
+![choose latency](LatencyChoose.png)
+
+![list latency](LatencyList.png)
+
+![post latency](LatencyPost.png)
 
 Note that the POST latency for ALL consistency is significantly lower than
 QUORUM or ONE consistency, which doesn't make intuitive sense. We believe this
@@ -143,8 +148,6 @@ that are broadcast and not waited upon by the master server will "bunch up" caus
 a much larger spread in latency values for ONE and QUORUM consistencies, bringing up the
 average latency. A measure of median would probably more accurately gauge the performance
 differences between the consistency modes.
-
-TODO
 
 ## Running
 
